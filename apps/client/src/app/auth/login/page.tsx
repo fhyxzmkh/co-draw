@@ -1,6 +1,6 @@
 "use client";
 
-import type React from "react";
+import React, { useEffect } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { Turnstile } from "@marsidev/react-turnstile";
 import axios from "axios";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { axios_login_instance } from "@/config/configuration";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,6 +31,14 @@ export default function LoginPage() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [turnstileToken, setTurnstileToken] = useState<string>("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      axios_login_instance.defaults.headers.common["Authorization"] =
+        `Bearer ${token}`;
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,17 +55,22 @@ export default function LoginPage() {
 
     if (Object.keys(newErrors).length === 0) {
       try {
-        const data = await axios.post("http://localhost:6789/auth/login", {
+        const data = await axios.post("/auth/login", {
           username: loginForm.username,
           password: loginForm.password,
           turnstileToken: turnstileToken,
         });
 
-        console.log(data);
-        setLoginForm({ username: "", password: "" });
-        toast.success("Login successful");
-        router.push("/");
+        if (data.data.access_token) {
+          localStorage.setItem("access_token", data.data.access_token);
+          axios_login_instance.defaults.headers.common["Authorization"] =
+            `Bearer ${data.data.access_token}`;
+          setLoginForm({ username: "", password: "" });
+          toast.success("Login successful");
+          router.push("/");
+        }
       } catch (error: unknown) {
+        localStorage.removeItem("access_token");
         if (axios.isAxiosError(error) && error.response) {
           toast.error(error.response.data.message);
         } else {

@@ -63,7 +63,7 @@ export default function RegisterPage() {
 
     if (Object.keys(newErrors).length === 0) {
       try {
-        const data = await axios.post("http://localhost:6789/auth/register", {
+        const data = await axios.post("/auth/register", {
           username: registerForm.username,
           password: registerForm.password,
           confirmPassword: registerForm.confirmPassword,
