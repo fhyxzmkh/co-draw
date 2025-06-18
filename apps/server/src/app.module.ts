@@ -4,10 +4,15 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module';
+import { BoardsModule } from './boards/boards.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: process.env.DATABASE_HOST,
@@ -19,6 +24,8 @@ import { ConfigModule } from '@nestjs/config';
       synchronize: false, // 仅在开发环境设置为 true
     }),
     UsersModule,
+    AuthModule,
+    BoardsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

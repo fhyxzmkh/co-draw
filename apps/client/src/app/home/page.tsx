@@ -78,7 +78,9 @@ export default function HomePage() {
 
   // 获取白板
   const findAllWhiteboards = async () => {
-    const data = await axios_login_instance.get("/boards");
+    const data = await axios_login_instance.get(
+      `/boards/my?userId=${userInfo?.id}`,
+    );
     setWhiteboards(data.data as BoardInfo[]);
   };
 
