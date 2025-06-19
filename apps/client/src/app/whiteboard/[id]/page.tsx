@@ -7,7 +7,7 @@ import { ArrowLeft, Users, Share2, Settings, Save } from "lucide-react";
 import WhiteboardCanvas, {
   WhiteboardRef,
 } from "@/components/whiteboard/whiteboard-canvas";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { axios_login_instance } from "@/config/configuration";
 
@@ -15,6 +15,7 @@ export default function WhiteboardPage() {
   const params = useParams();
   const id = params.id;
 
+  const [isLoading, setIsLoading] = useState(false);
   const whiteboardRef = useRef<WhiteboardRef>(null);
 
   const triggerSave = () => {
@@ -48,6 +49,7 @@ export default function WhiteboardPage() {
     if (!id) return; // 如果没有 id，则不加载
 
     try {
+      setIsLoading(true);
       toast.info("正在加载白板内容...");
       const response = await axios_login_instance.get(`/boards/${id}`);
       const boardData = response.data;
@@ -62,6 +64,8 @@ export default function WhiteboardPage() {
     } catch (error) {
       console.error("加载白板失败:", error);
       toast.error("加载白板内容失败。");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -108,14 +112,16 @@ export default function WhiteboardPage() {
       </header>
 
       {/* 白板画布 */}
-      <main className="flex-1">
-        <WhiteboardCanvas
-          width={1200}
-          height={800}
-          ref={whiteboardRef}
-          onSave={handleSave}
-        />
-      </main>
+      {!isLoading && (
+        <main className="flex-1">
+          <WhiteboardCanvas
+            width={1200}
+            height={800}
+            ref={whiteboardRef}
+            onSave={handleSave}
+          />
+        </main>
+      )}
     </div>
   );
 }

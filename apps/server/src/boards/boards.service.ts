@@ -37,7 +37,13 @@ export class BoardsService {
     return this.boardRepository.delete(id);
   }
 
-  findAllByOwnerId(userId: string) {
-    return this.boardRepository.findBy({ ownerId: userId });
+  async findMyAll(userId: string) {
+    return this.boardRepository
+      .createQueryBuilder('board')
+      .where('board.owner_id = :userId', { userId })
+      .orWhere('JSON_CONTAINS(board.collaborator_ids, :userIdJson)', {
+        userIdJson: JSON.stringify([userId]),
+      })
+      .getMany();
   }
 }

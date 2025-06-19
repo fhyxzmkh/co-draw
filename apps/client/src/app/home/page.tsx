@@ -81,6 +81,7 @@ export default function HomePage() {
     const data = await axios_login_instance.get(
       `/boards/my?userId=${userInfo?.id}`,
     );
+    console.log(data);
     setWhiteboards(data.data as BoardInfo[]);
   };
 
@@ -385,10 +386,10 @@ export default function HomePage() {
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
                         <span>
-                          {board.collaboratorId === null ||
-                          JSON.stringify(board.collaboratorId).length === 0
+                          {board.collaboratorIds === null ||
+                          JSON.stringify(board.collaboratorIds).length === 0
                             ? "无"
-                            : JSON.stringify(board.collaboratorId).length}
+                            : JSON.stringify(board.collaboratorIds).length}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
@@ -397,7 +398,7 @@ export default function HomePage() {
                       </div>
                     </div>
                     <Badge variant="secondary" className="text-xs">
-                      最近更新
+                      {userInfo?.id === board.ownerId ? "我创建的" : "我参与的"}
                     </Badge>
                   </div>
                 </CardContent>

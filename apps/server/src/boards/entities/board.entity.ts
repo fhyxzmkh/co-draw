@@ -23,8 +23,8 @@ export class Board {
   @Column('json')
   content: JSON;
 
-  @Column('json', { name: 'collaborator_id' })
-  collaboratorId: JSON;
+  @Column('json', { name: 'collaborator_ids' })
+  collaboratorIds: JSON;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

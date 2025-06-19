@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { BoardsService } from './boards.service';
 import { CreateBoardDto } from './dto/create-board.dto';
@@ -25,9 +26,10 @@ export class BoardsController {
     return this.boardsService.findAll();
   }
 
+  // 返回所有我创建或者我参与的白板
   @Get('/my')
-  findMyAll(@Param('userId') userId: string) {
-    return this.boardsService.findAllByOwnerId(userId);
+  findMyAll(@Query('userId') userId: string) {
+    return this.boardsService.findMyAll(userId);
   }
 
   @Get(':id')

@@ -3,7 +3,7 @@ export interface BoardInfo {
   title: string;
   description: string;
   ownerId: string;
-  collaboratorId: JSON;
+  collaboratorIds: JSON;
   content: JSON;
   createdAt: string;
   updatedAt: string;
