@@ -8,7 +8,7 @@ interface SocketState {
 }
 
 interface SocketActions {
-  connect: () => void;
+  connect: (boardId: string) => void;
   disconnect: () => void;
   sendMessage: (message: string) => void;
   addMessage: (data: any) => void; // 用于内部更新消息列表
@@ -25,7 +25,7 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
   // --- ACTIONS ---
 
   // 动作：连接到服务器
-  connect: () => {
+  connect: (boardId: string) => {
     // 防止重复连接
     if (get().socket) {
       return;
@@ -36,6 +36,8 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
     newSocket.on("connect", () => {
       console.log("Zustand: Connected to WebSocket server!", newSocket.id);
       set({ socket: newSocket, isConnected: true });
+
+      newSocket.emit("joinRoom", { boardId });
     });
 
     newSocket.on("disconnect", () => {
@@ -48,7 +50,10 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
       get().addMessage(data); // 调用内部 action 来更新消息列表
     });
 
-    // 这里可以监听其他来自服务器的事件...
+    // 监听确认加入房间的事件
+    newSocket.on("joinedRoom", (roomId) => {
+      console.log(`Successfully joined room: ${roomId}`);
+    });
   },
 
   // 动作：断开连接

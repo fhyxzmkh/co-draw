@@ -42,14 +42,49 @@ export class SocketGateway
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
-  // 加入房间事件
+  // 监听加入房间事件
   @SubscribeMessage('joinRoom')
   handleJoinRoom(
-    @MessageBody() room: string,
+    @MessageBody() data: { boardId: string },
     @ConnectedSocket() client: Socket,
-  ) {
-    client.join(room);
-    this.logger.log(`Client ${client.id} joined room: ${room}`);
-    client.emit('joinedRoom', room); // 通知客户端已成功加入
+  ): void {
+    const { boardId } = data;
+    this.logger.log(`Client ${client.id} joining room ${boardId}`);
+
+    client.join(boardId);
+
+    client.emit('joinedRoom', boardId); // 通知客户端已成功加入
+  }
+
+  // 监听 "drawing" 事件
+  @SubscribeMessage('drawing')
+  handleDrawing(
+    @MessageBody() data: { boardId: string; object: any },
+    @ConnectedSocket() client: Socket,
+  ): void {
+    const { boardId, object } = data;
+
+    // 使用 client.to(room).emit(...) 将消息广播给指定房间内的所有其他客户端
+    client.to(boardId).emit('drawing', object);
+  }
+
+  // 监听 "object:modified" 事件
+  @SubscribeMessage('object:modified')
+  handleObjectModified(
+    @MessageBody() data: { boardId: string; object: any },
+    @ConnectedSocket() client: Socket,
+  ): void {
+    const { boardId, object } = data;
+    client.to(boardId).emit('object:modified', object);
+  }
+
+  // 监听 "object:removed" 事件
+  @SubscribeMessage('object:removed')
+  handleObjectRemoved(
+    @MessageBody() data: { boardId: string; objectId: string },
+    @ConnectedSocket() client: Socket,
+  ): void {
+    const { boardId, objectId } = data;
+    client.to(boardId).emit('object:removed', objectId);
   }
 }

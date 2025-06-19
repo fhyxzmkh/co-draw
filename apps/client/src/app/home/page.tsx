@@ -81,7 +81,7 @@ export default function HomePage() {
     const data = await axios_login_instance.get(
       `/boards/my?userId=${userInfo?.id}`,
     );
-    console.log(data);
+
     setWhiteboards(data.data as BoardInfo[]);
   };
 

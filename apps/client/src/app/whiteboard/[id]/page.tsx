@@ -10,6 +10,7 @@ import WhiteboardCanvas, {
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { axios_login_instance } from "@/config/configuration";
+import { useSocketStore } from "@/stores/socket-store";
 
 export default function WhiteboardPage() {
   const params = useParams();
@@ -17,6 +18,8 @@ export default function WhiteboardPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const whiteboardRef = useRef<WhiteboardRef>(null);
+
+  const { connect, disconnect } = useSocketStore();
 
   const triggerSave = () => {
     // 通过 ref 调用子组件的方法，子组件会通过 onSave prop 回传数据
@@ -72,6 +75,15 @@ export default function WhiteboardPage() {
   useEffect(() => {
     loadBoardContent();
   }, []);
+
+  useEffect(() => {
+    connect(id as string);
+
+    // 组件卸载时，调用 disconnect action 来清理连接
+    return () => {
+      disconnect();
+    };
+  }, [id]);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
