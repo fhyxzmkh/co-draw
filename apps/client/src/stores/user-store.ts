@@ -3,7 +3,6 @@ import { create } from "zustand/react";
 interface UserInfo {
   id: string;
   username: string;
-  createdAt: string;
 }
 
 interface UserStore {
@@ -13,11 +12,7 @@ interface UserStore {
 }
 
 export const useUserStore = create<UserStore>()((set) => ({
-  userInfo: {
-    id: "Iki5Z4FRET2k69cAop15dUpmVa8LZKv4",
-    username: "test-user",
-    createdAt: "20xx-xx-xx",
-  },
+  userInfo: null,
 
   setUserInfo: (userInfo: UserInfo) => set({ userInfo }),
 }));

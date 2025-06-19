@@ -20,6 +20,8 @@ import axios from "axios";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { axios_login_instance } from "@/config/configuration";
+import { useUserStore } from "@/stores/user-store";
+import { jwtDecode } from "jwt-decode";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,6 +33,8 @@ export default function LoginPage() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [turnstileToken, setTurnstileToken] = useState<string>("");
+
+  const setUserInfo = useUserStore((state) => state.setUserInfo);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -55,19 +59,26 @@ export default function LoginPage() {
 
     if (Object.keys(newErrors).length === 0) {
       try {
-        const data = await axios.post("/auth/login", {
+        const data = await axios.post("http://localhost:6789/auth/login", {
           username: loginForm.username,
           password: loginForm.password,
           turnstileToken: turnstileToken,
         });
 
-        if (data.data.access_token) {
-          localStorage.setItem("access_token", data.data.access_token);
+        const access_token = data.data.access_token;
+        if (access_token) {
+          const decoded: any = jwtDecode(access_token);
+          setUserInfo({
+            id: decoded.sub,
+            username: decoded.username,
+          });
+
+          localStorage.setItem("access_token", access_token);
           axios_login_instance.defaults.headers.common["Authorization"] =
-            `Bearer ${data.data.access_token}`;
+            `Bearer ${access_token}`;
           setLoginForm({ username: "", password: "" });
           toast.success("Login successful");
-          router.push("/");
+          router.push("/home");
         }
       } catch (error: unknown) {
         localStorage.removeItem("access_token");

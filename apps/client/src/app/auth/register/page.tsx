@@ -63,7 +63,7 @@ export default function RegisterPage() {
 
     if (Object.keys(newErrors).length === 0) {
       try {
-        const data = await axios.post("/auth/register", {
+        const data = await axios.post("http://localhost:6789/auth/register", {
           username: registerForm.username,
           password: registerForm.password,
           confirmPassword: registerForm.confirmPassword,
@@ -73,7 +73,7 @@ export default function RegisterPage() {
         console.log(data);
         setRegisterForm({ confirmPassword: "", username: "", password: "" });
         toast.success("Register successful");
-        router.push("/login");
+        router.push("/auth/login");
       } catch (error: unknown) {
         if (axios.isAxiosError(error) && error.response) {
           toast.error(error.response.data.message);

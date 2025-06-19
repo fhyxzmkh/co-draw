@@ -26,10 +26,13 @@ import {
   Type,
   MousePointer,
 } from "lucide-react";
+import { nanoid } from "nanoid";
+import { useSocketStore } from "@/stores/socket-store";
 
 interface WhiteboardCanvasProps {
   width?: number;
   height?: number;
+  boardId: string;
   onSave?: (data: object) => void;
 }
 
@@ -64,13 +67,18 @@ const COLORS = [
 ];
 
 const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
-  ({ width = 1200, height = 800, onSave }: WhiteboardCanvasProps, ref) => {
+  (
+    { width = 1200, height = 800, boardId, onSave }: WhiteboardCanvasProps,
+    ref,
+  ) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
     const [currentTool, setCurrentTool] = useState<Tool>("pen");
     const [brushColor, setBrushColor] = useState("#000000");
     const [brushWidth, setBrushWidth] = useState([5]);
     const [isDrawing, setIsDrawing] = useState(false);
+
+    const sk = useSocketStore((state) => state.socket);
 
     useEffect(() => {
       if (!canvasRef.current) return;
@@ -90,8 +98,17 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
       canvas.freeDrawingBrush.width = brushWidth[0];
 
       // 监听绘图事件
-      canvas.on("path:created", () => {
+      canvas.on("path:created", (e: any) => {
         setIsDrawing(false);
+
+        if (!e.path) return;
+        e.path.set("id", nanoid().toString());
+        const objectData = e.path.toJSON(["id"]);
+
+        const socket = useSocketStore.getState().socket;
+        if (socket) {
+          socket.emit("drawing", { boardId, object: objectData });
+        }
       });
 
       canvas.on("mouse:down", () => {
@@ -102,10 +119,79 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
         setIsDrawing(false);
       });
 
+      canvas.on("object:modified", (e) => {
+        if (!e.target) return;
+
+        // e.target 就是被修改的那个对象
+        const modifiedObject: any = e.target;
+
+        // 确保对象有 id (如果它是从其他客户端同步过来的，也应该有id)
+        if (!modifiedObject.id) {
+          modifiedObject.set("id", nanoid().toString);
+        }
+
+        // Emit!
+        const socket = useSocketStore.getState().socket;
+        if (socket) {
+          socket.emit("object:modified", {
+            boardId,
+            object: modifiedObject.toJSON(["id"]),
+          });
+        }
+      });
+
       return () => {
         canvas.dispose();
       };
     }, []);
+
+    useEffect(() => {
+      const canvas = fabricCanvasRef.current;
+
+      if (!canvas || !sk) return;
+
+      // A. 监听 "drawing" 广播
+      sk.on("drawing", (object) => {
+        // 使用 fabric.util.enlivenObjects 将 JSON 对象转换回 fabric 对象
+        fabric.util.enlivenObjects(
+          [object],
+          (objects: any) => {
+            const fabricObject = objects[0];
+            canvas.add(fabricObject);
+            canvas.renderAll();
+          },
+          "",
+        );
+      });
+
+      // B. 监听 "object:modified" 广播
+      sk.on("object:modified", (object) => {
+        // 找到画布上对应的对象并更新它
+        const objToUpdate = canvas
+          .getObjects()
+          .find((o: any) => o.id === object.id);
+        if (objToUpdate) {
+          objToUpdate.set(object);
+          canvas.renderAll();
+        }
+      });
+
+      // C. 监听 "object:removed" 广播
+      // socket.on("object:removed", (objectId) => {
+      //   const objToRemove = canvas.getObjects().find((o) => o.id === objectId);
+      //   if (objToRemove) {
+      //     canvas.remove(objToRemove);
+      //     canvas.renderAll();
+      //   }
+      // });
+
+      // 组件卸载时，移除所有监听器，防止内存泄漏
+      return () => {
+        sk.off("drawing");
+        sk.off("object:modified");
+        // sk.off("object:removed");
+      };
+    }, [sk]);
 
     // 更新画笔颜色
     useEffect(() => {
@@ -158,6 +244,8 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
       if (!fabricCanvasRef.current) return;
 
       const rect = new fabric.Rect({
+        // @ts-ignore
+        id: nanoid().toString(),
         left: 100,
         top: 100,
         width: 100,
@@ -169,6 +257,11 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
       fabricCanvasRef.current.add(rect);
       fabricCanvasRef.current.setActiveObject(rect);
+
+      const socket = useSocketStore.getState().socket;
+      if (socket) {
+        socket.emit("drawing", { boardId, object: rect.toJSON(["id"]) });
+      }
     };
 
     // 添加圆形
@@ -176,6 +269,8 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
       if (!fabricCanvasRef.current) return;
 
       const circle = new fabric.Circle({
+        // @ts-ignore
+        id: nanoid().toString(),
         left: 100,
         top: 100,
         radius: 50,
@@ -186,6 +281,11 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
       fabricCanvasRef.current.add(circle);
       fabricCanvasRef.current.setActiveObject(circle);
+
+      const socket = useSocketStore.getState().socket;
+      if (socket) {
+        socket.emit("drawing", { boardId, object: circle.toJSON(["id"]) });
+      }
     };
 
     // 添加文本
@@ -193,6 +293,8 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
       if (!fabricCanvasRef.current) return;
 
       const text = new fabric.IText("双击编辑文本", {
+        // @ts-ignore
+        id: nanoid().toString(),
         left: 100,
         top: 100,
         fontFamily: "Arial",
@@ -202,6 +304,11 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
       fabricCanvasRef.current.add(text);
       fabricCanvasRef.current.setActiveObject(text);
+
+      const socket = useSocketStore.getState().socket;
+      if (socket) {
+        socket.emit("drawing", { boardId, object: text.toJSON(["id"]) });
+      }
     };
 
     // 清空画布

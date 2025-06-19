@@ -83,7 +83,7 @@ export default function WhiteboardPage() {
     return () => {
       disconnect();
     };
-  }, [id]);
+  }, [connect, disconnect, id]);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -129,6 +129,7 @@ export default function WhiteboardPage() {
           <WhiteboardCanvas
             width={1200}
             height={800}
+            boardId={id as string}
             ref={whiteboardRef}
             onSave={handleSave}
           />
