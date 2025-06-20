@@ -17,7 +17,6 @@ import {
   Pen,
   Eraser,
   Palette,
-  RotateCcw,
   Trash2,
   Download,
   Upload,
@@ -150,7 +149,16 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
       if (!canvas || !sk) return;
 
-      // A. 监听 "drawing" 广播
+      // 监听 'initialState' 事件
+      sk.on("initialState", (boardContent) => {
+        if (boardContent && fabricCanvasRef.current) {
+          fabricCanvasRef.current.loadFromJSON(boardContent, () => {
+            fabricCanvasRef.current?.renderAll();
+          });
+        }
+      });
+
+      // 监听 "drawing" 广播
       sk.on("drawing", (object) => {
         // 使用 fabric.util.enlivenObjects 将 JSON 对象转换回 fabric 对象
         fabric.util.enlivenObjects(
@@ -164,7 +172,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
         );
       });
 
-      // B. 监听 "object:modified" 广播
+      // 监听 "object:modified" 广播
       sk.on("object:modified", (object) => {
         // 找到画布上对应的对象并更新它
         const objToUpdate = canvas
@@ -176,6 +184,25 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
         }
       });
 
+      // 监听 "objects:removed" 广播
+      sk.on("objects:removed", (objectIds: string[]) => {
+        if (!fabricCanvasRef.current || !objectIds || objectIds.length === 0)
+          return;
+
+        const canvas = fabricCanvasRef.current;
+
+        const objectsToRemove = canvas
+          .getObjects()
+          .filter((obj: any) => objectIds.includes(obj.id));
+
+        if (objectsToRemove.length > 0) {
+          canvas.remove(...objectsToRemove);
+
+          canvas.renderAll();
+          console.log(`Removed ${objectsToRemove.length} objects.`);
+        }
+      });
+
       sk.on("canvas:cleared", () => {
         if (fabricCanvasRef.current) {
           fabricCanvasRef.current.clear();
@@ -184,23 +211,27 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
         }
       });
 
-      // C. 监听 "object:removed" 广播
-      // socket.on("object:removed", (objectId) => {
-      //   const objToRemove = canvas.getObjects().find((o) => o.id === objectId);
-      //   if (objToRemove) {
-      //     canvas.remove(objToRemove);
-      //     canvas.renderAll();
-      //   }
-      // });
-
       // 组件卸载时，移除所有监听器，防止内存泄漏
       return () => {
+        sk.off("initialState");
         sk.off("drawing");
         sk.off("object:modified");
-        // sk.off("object:removed");
+        sk.off("objects:removed");
         sk.off("canvas:cleared");
       };
     }, [sk]);
+
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Delete" || e.key === "Backspace") {
+          deleteSelectedObjects();
+        }
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }, [fabricCanvasRef.current]);
 
     // 更新画笔颜色
     useEffect(() => {
@@ -320,22 +351,39 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
       }
     };
 
+    // 删除选中的对象
+    const deleteSelectedObjects = () => {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+
+      const activeObjects = canvas.getActiveObjects(); // 获取所有选中的对象
+      if (activeObjects.length === 0) return;
+
+      // 从画布上移除这些对象
+      canvas.discardActiveObject();
+      canvas.remove(...activeObjects);
+
+      // 2. 提取所有被删除对象的 ID
+      const deletedObjectIds = activeObjects
+        .map((obj: any) => obj.id)
+        .filter((id) => id);
+
+      // 3. Emit! 发送 ID 列表
+      const socket = useSocketStore.getState().socket;
+      if (socket && deletedObjectIds.length > 0) {
+        socket.emit("objects:removed", {
+          boardId,
+          objectIds: deletedObjectIds,
+        });
+      }
+    };
+
     // 清空画布
     const clearCanvas = () => {
       if (fabricCanvasRef.current) {
         const socket = useSocketStore.getState().socket;
         if (socket) {
           socket.emit("canvas:cleared", { boardId });
-        }
-      }
-    };
-
-    // 撤销
-    const undo = () => {
-      if (fabricCanvasRef.current) {
-        const objects = fabricCanvasRef.current.getObjects();
-        if (objects.length > 0) {
-          fabricCanvasRef.current.remove(objects[objects.length - 1]);
         }
       }
     };
@@ -524,9 +572,6 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
             {/* 操作按钮 */}
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="sm" onClick={undo}>
-                <RotateCcw className="h-4 w-4" />
-              </Button>
               <Button variant="outline" size="sm" onClick={clearCanvas}>
                 <Trash2 className="h-4 w-4" />
               </Button>

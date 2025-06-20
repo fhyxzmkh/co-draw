@@ -7,7 +7,7 @@ import { ArrowLeft, Users, Share2, Settings, Save } from "lucide-react";
 import WhiteboardCanvas, {
   WhiteboardRef,
 } from "@/components/whiteboard/whiteboard-canvas";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { axios_login_instance } from "@/config/configuration";
 import { useSocketStore } from "@/stores/socket-store";
@@ -16,7 +16,6 @@ export default function WhiteboardPage() {
   const params = useParams();
   const id = params.id;
 
-  const [isLoading, setIsLoading] = useState(false);
   const whiteboardRef = useRef<WhiteboardRef>(null);
 
   const { connect, disconnect } = useSocketStore();
@@ -47,34 +46,6 @@ export default function WhiteboardPage() {
     // 这里可以实现管理协作者的逻辑
     console.log("管理协作者");
   };
-
-  const loadBoardContent = async () => {
-    if (!id) return; // 如果没有 id，则不加载
-
-    try {
-      setIsLoading(true);
-      toast.info("正在加载白板内容...");
-      const response = await axios_login_instance.get(`/boards/${id}`);
-      const boardData = response.data;
-
-      if (boardData && boardData.content) {
-        const jsonDataObject = boardData.content;
-
-        whiteboardRef.current?.loadCanvasFromJson(jsonDataObject);
-      } else {
-        toast.success("这是一个新的白板，开始创作吧！");
-      }
-    } catch (error) {
-      console.error("加载白板失败:", error);
-      toast.error("加载白板内容失败。");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadBoardContent();
-  }, []);
 
   useEffect(() => {
     connect(id as string);
@@ -124,17 +95,15 @@ export default function WhiteboardPage() {
       </header>
 
       {/* 白板画布 */}
-      {!isLoading && (
-        <main className="flex-1">
-          <WhiteboardCanvas
-            width={1200}
-            height={800}
-            boardId={id as string}
-            ref={whiteboardRef}
-            onSave={handleSave}
-          />
-        </main>
-      )}
+      <main className="flex-1">
+        <WhiteboardCanvas
+          width={1200}
+          height={800}
+          boardId={id as string}
+          ref={whiteboardRef}
+          onSave={handleSave}
+        />
+      </main>
     </div>
   );
 }

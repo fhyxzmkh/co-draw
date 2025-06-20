@@ -4,14 +4,11 @@ import { create } from "zustand/react";
 interface SocketState {
   socket: Socket | null;
   isConnected: boolean;
-  receivedMessages: any[];
 }
 
 interface SocketActions {
   connect: (boardId: string) => void;
   disconnect: () => void;
-  sendMessage: (message: string) => void;
-  addMessage: (data: any) => void; // 用于内部更新消息列表
 }
 
 type SocketStore = SocketState & SocketActions;
@@ -20,7 +17,6 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
   // 初始状态
   socket: null,
   isConnected: false,
-  receivedMessages: [],
 
   // --- ACTIONS ---
 
@@ -45,15 +41,12 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
       set({ socket: null, isConnected: false });
     });
 
-    // 监听我们自定义的 'messageToClient' 事件
-    newSocket.on("messageToClient", (data) => {
-      get().addMessage(data); // 调用内部 action 来更新消息列表
-    });
-
     // 监听确认加入房间的事件
     newSocket.on("joinedRoom", (roomId) => {
       console.log(`Successfully joined room: ${roomId}`);
     });
+
+    newSocket.emit("getInitialState", boardId);
   },
 
   // 动作：断开连接
@@ -63,20 +56,5 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
       socket.disconnect();
       set({ socket: null, isConnected: false });
     }
-  },
-
-  // 动作：发送消息
-  sendMessage: (message: string) => {
-    const { socket } = get();
-    if (socket) {
-      socket.emit("messageToServer", { message });
-    }
-  },
-
-  // 内部动作：添加新消息到列表
-  addMessage: (data: any) => {
-    set((state) => ({
-      receivedMessages: [...state.receivedMessages, data],
-    }));
   },
 }));

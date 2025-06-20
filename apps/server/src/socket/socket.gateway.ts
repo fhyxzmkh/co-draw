@@ -11,6 +11,7 @@ import {
 
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { BoardsService } from '../boards/boards.service';
 
 @WebSocketGateway(6788, {
   cors: {
@@ -23,6 +24,8 @@ export class SocketGateway
 {
   @WebSocketServer()
   server: Server;
+
+  constructor(private readonly boardsService: BoardsService) {}
 
   private readonly logger = new Logger(SocketGateway.name);
 
@@ -56,6 +59,19 @@ export class SocketGateway
     client.emit('joinedRoom', boardId); // 通知客户端已成功加入
   }
 
+  // 监听初始化白板状态事件
+  @SubscribeMessage('getInitialState')
+  async handleGetInitialState(
+    @MessageBody() data: { boardId: string },
+    @ConnectedSocket() client: Socket,
+  ): Promise<void> {
+    const { boardId } = data;
+
+    const result = await this.boardsService.findOne(boardId);
+
+    client.emit('initialState', result?.content);
+  }
+
   // 监听 "drawing" 事件
   @SubscribeMessage('drawing')
   handleDrawing(
@@ -78,14 +94,14 @@ export class SocketGateway
     client.to(boardId).emit('object:modified', object);
   }
 
-  // 监听 "object:removed" 事件
-  @SubscribeMessage('object:removed')
+  // 监听 "objects:removed" 事件
+  @SubscribeMessage('objects:removed')
   handleObjectRemoved(
-    @MessageBody() data: { boardId: string; objectId: string },
+    @MessageBody() data: { boardId: string; objectIds: string[] },
     @ConnectedSocket() client: Socket,
   ): void {
-    const { boardId, objectId } = data;
-    client.to(boardId).emit('object:removed', objectId);
+    const { boardId, objectIds } = data;
+    client.to(boardId).emit('objects:removed', objectIds);
   }
 
   // 监听 "canvas:cleared" 事件
