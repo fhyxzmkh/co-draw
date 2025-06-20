@@ -176,6 +176,14 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
         }
       });
 
+      sk.on("canvas:cleared", () => {
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.clear();
+          fabricCanvasRef.current.backgroundColor = "#ffffff";
+          fabricCanvasRef.current.renderAll();
+        }
+      });
+
       // C. 监听 "object:removed" 广播
       // socket.on("object:removed", (objectId) => {
       //   const objToRemove = canvas.getObjects().find((o) => o.id === objectId);
@@ -190,6 +198,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
         sk.off("drawing");
         sk.off("object:modified");
         // sk.off("object:removed");
+        sk.off("canvas:cleared");
       };
     }, [sk]);
 
@@ -314,9 +323,10 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
     // 清空画布
     const clearCanvas = () => {
       if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.clear();
-        fabricCanvasRef.current.backgroundColor = "#ffffff";
-        fabricCanvasRef.current.renderAll();
+        const socket = useSocketStore.getState().socket;
+        if (socket) {
+          socket.emit("canvas:cleared", { boardId });
+        }
       }
     };
 

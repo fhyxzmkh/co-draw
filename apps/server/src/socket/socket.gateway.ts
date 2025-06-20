@@ -87,4 +87,15 @@ export class SocketGateway
     const { boardId, objectId } = data;
     client.to(boardId).emit('object:removed', objectId);
   }
+
+  // 监听 "canvas:cleared" 事件
+  @SubscribeMessage('canvas:cleared')
+  handleCanvasCleared(
+    @MessageBody() data: { boardId: string },
+    @ConnectedSocket() client: Socket,
+  ): void {
+    const { boardId } = data;
+
+    this.server.to(boardId).emit('canvas:cleared');
+  }
 }
