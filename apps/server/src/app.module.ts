@@ -7,7 +7,8 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { BoardsModule } from './boards/boards.module';
 import { SocketModule } from './socket/socket.module';
-import { DocumentModule } from './document/document.module';
+import { DocumentsModule } from './documents/documents.module';
+import { PermissionsModule } from './permissions/permissions.module';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { DocumentModule } from './document/document.module';
     AuthModule,
     BoardsModule,
     SocketModule,
-    DocumentModule,
+    DocumentsModule,
+    PermissionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
