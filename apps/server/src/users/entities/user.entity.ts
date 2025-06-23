@@ -6,7 +6,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-@Entity({ schema: 'public', name: 'user' })
+@Entity({ schema: 'public', name: 'users' })
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;

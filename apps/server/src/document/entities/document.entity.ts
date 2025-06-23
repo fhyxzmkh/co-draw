@@ -6,8 +6,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity({ schema: 'public', name: 'boards' })
-export class Board {
+@Entity({ schema: 'public', name: 'documents' })
+export class Document {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -23,7 +23,7 @@ export class Board {
   @Column({ type: 'jsonb', nullable: true, name: 'collaborator_ids' })
   collaboratorIds: object | null;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'bytea', nullable: true })
   content: object | null;
 
   @CreateDateColumn({

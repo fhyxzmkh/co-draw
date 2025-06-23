@@ -87,14 +87,14 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4">
             <Users className="h-8 w-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">协作白板</h1>
+          <h1 className="text-2xl font-bold text-foreground">Co Draw</h1>
           <p className="text-muted-foreground mt-1">开始你的创意协作之旅</p>
         </div>
 
         <Card className="shadow-lg border-0">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl">欢迎回来</CardTitle>
-            <CardDescription>登录你的账户继续使用协作白板</CardDescription>
+            <CardDescription>登录你的账户继续协作</CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-6">
@@ -207,7 +207,7 @@ export default function LoginPage() {
         </Card>
 
         <div className="text-center mt-6 text-sm text-muted-foreground">
-          © 2025 协作白板. 保留所有权利.
+          © 2025 Co Draw. 保留所有权利.
         </div>
       </div>
     </div>

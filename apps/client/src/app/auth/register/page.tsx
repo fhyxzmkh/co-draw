@@ -19,6 +19,7 @@ import { Turnstile } from "@marsidev/react-turnstile";
 import axios from "axios";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { axios_instance } from "@/config/configuration";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -63,7 +64,7 @@ export default function RegisterPage() {
 
     if (Object.keys(newErrors).length === 0) {
       try {
-        const data = await axios.post("http://localhost:6789/auth/register", {
+        const data = await axios_instance.post("/auth/register", {
           username: registerForm.username,
           password: registerForm.password,
           confirmPassword: registerForm.confirmPassword,
@@ -92,14 +93,14 @@ export default function RegisterPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4">
             <Users className="h-8 w-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">协作白板</h1>
+          <h1 className="text-2xl font-bold text-foreground">Co Draw</h1>
           <p className="text-muted-foreground mt-1">开始你的创意协作之旅</p>
         </div>
 
         <Card className="shadow-lg border-0">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl">创建账户</CardTitle>
-            <CardDescription>注册新账户开始使用协作白板</CardDescription>
+            <CardDescription>注册新账户开始协作</CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-6">
@@ -263,7 +264,7 @@ export default function RegisterPage() {
         </Card>
 
         <div className="text-center mt-6 text-sm text-muted-foreground">
-          © 2025 协作白板. 保留所有权利.
+          © 2025 Co Draw. 保留所有权利.
         </div>
       </div>
     </div>

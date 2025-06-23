@@ -57,8 +57,11 @@ import { useUserStore } from "@/stores/user-store";
 import { BoardInfo } from "@/stores/board-store";
 import { toast } from "sonner";
 import { axios_instance } from "@/config/configuration";
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
+  const router = useRouter();
+
   const [whiteboards, setWhiteboards] = useState<BoardInfo[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -145,6 +148,14 @@ export default function HomePage() {
     return new Date(dateString).toLocaleDateString("zh-CN");
   };
 
+  const logout = async () => {
+    const response = await axios_instance.post("/auth/logout");
+    if (response.data.message === "success") {
+      toast.success("退出登录成功");
+      router.push("/auth/login");
+    }
+  };
+
   useEffect(() => {
     findAllWhiteboards();
   }, []);
@@ -158,7 +169,7 @@ export default function HomePage() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Users className="h-8 w-8 text-primary" />
-                <h1 className="text-xl font-bold">协作白板</h1>
+                <h1 className="text-xl font-bold">Co Draw</h1>
               </div>
             </div>
 
@@ -185,7 +196,7 @@ export default function HomePage() {
                     <Settings className="mr-2 h-4 w-4" />
                     设置
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => logout()}>
                     <LogOut className="mr-2 h-4 w-4" />
                     退出登录
                   </DropdownMenuItem>
@@ -201,8 +212,8 @@ export default function HomePage() {
         {/* 页面标题和操作栏 */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">我的白板</h2>
-            <p className="text-gray-600 mt-1">管理和访问你的所有协作白板</p>
+            <h2 className="text-3xl font-bold text-gray-900">我的文件</h2>
+            <p className="text-gray-600 mt-1">管理和访问你的所有协作文件</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -213,7 +224,7 @@ export default function HomePage() {
               <DialogTrigger asChild>
                 <Button className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
-                  创建白板
+                  创建
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -269,7 +280,7 @@ export default function HomePage() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="搜索白板..."
+              placeholder="搜索文件..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -299,17 +310,17 @@ export default function HomePage() {
           <div className="text-center py-12">
             <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchQuery ? "未找到匹配的白板" : "还没有白板"}
+              {searchQuery ? "未找到匹配的文件" : "还没有文件"}
             </h3>
             <p className="text-gray-600 mb-4">
               {searchQuery
                 ? "尝试使用不同的关键词搜索"
-                : "创建你的第一个协作白板开始工作"}
+                : "创建你的第一个协作文件开始工作"}
             </p>
             {!searchQuery && (
               <Button onClick={() => setIsCreateDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                创建白板
+                创建文件
               </Button>
             )}
           </div>

@@ -51,6 +51,18 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard)
+  @Post('/logout')
+  logout(@Res({ passthrough: true }) response: Response) {
+    response.clearCookie('access_token', {
+      httpOnly: true,
+      path: '/',
+    });
+
+    return { message: 'success' };
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
   @Get('/profile')
   getProfile(@Request() req): any {
     return req.user;

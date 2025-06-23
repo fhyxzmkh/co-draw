@@ -7,14 +7,17 @@ import { ArrowLeft, Users, Share2, Settings, Save } from "lucide-react";
 import WhiteboardCanvas, {
   WhiteboardRef,
 } from "@/components/whiteboard/whiteboard-canvas";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { axios_instance } from "@/config/configuration";
 import { useSocketStore } from "@/stores/socket-store";
+import CollaboratorsDialog from "@/components/common/collaborators-dialog";
 
 export default function WhiteboardPage() {
   const params = useParams();
   const id = params.id;
+
+  const [isCollaboratorsOpen, setIsCollaboratorsOpen] = useState(false);
 
   const whiteboardRef = useRef<WhiteboardRef>(null);
 
@@ -40,11 +43,6 @@ export default function WhiteboardPage() {
   const handleShare = () => {
     // 这里可以实现分享白板的逻辑
     console.log("分享白板");
-  };
-
-  const handleCollaborators = () => {
-    // 这里可以实现管理协作者的逻辑
-    console.log("管理协作者");
   };
 
   useEffect(() => {
@@ -79,7 +77,11 @@ export default function WhiteboardPage() {
               <Save className="h-4 w-4 mr-2" />
               保存
             </Button>
-            <Button variant="outline" size="sm" onClick={handleCollaborators}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCollaboratorsOpen(true)}
+            >
               <Users className="h-4 w-4 mr-2" />
               协作者
             </Button>
@@ -104,6 +106,15 @@ export default function WhiteboardPage() {
           onSave={handleSave}
         />
       </main>
+
+      {/* 协作者管理对话框 */}
+      <CollaboratorsDialog
+        open={isCollaboratorsOpen}
+        onOpenChange={setIsCollaboratorsOpen}
+        whiteboardId={id as string}
+        currentUserPermission={"owner"}
+        currentUserId={"1"}
+      />
     </div>
   );
 }
