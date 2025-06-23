@@ -3,7 +3,11 @@ import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Board } from './entities/board.entity';
-import { Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
+import { PermissionsService } from '../permissions/permissions.service';
+import { ResourceTypeEnum } from '../permissions/entities/resource-type.enum';
+import { PermissionRoleEnum } from '../permissions/entities/permission-role.enum';
+import { CreatePermissionDto } from '../permissions/dto/create-permission.dto';
 
 @Injectable()
 export class BoardsService {
@@ -12,11 +16,37 @@ export class BoardsService {
   constructor(
     @InjectRepository(Board)
     private boardRepository: Repository<Board>,
+    private permissionsService: PermissionsService,
+    private dataSource: DataSource,
   ) {}
 
-  create(createBoardDto: CreateBoardDto) {
-    const newBoard = this.boardRepository.create(createBoardDto);
-    return this.boardRepository.save(newBoard);
+  async create(createBoardDto: CreateBoardDto) {
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const newBoard = this.boardRepository.create(createBoardDto);
+
+      const obj = await this.boardRepository.save(newBoard);
+
+      if (obj) {
+        await this.permissionsService.create({
+          resourceId: obj.id,
+          resourceType: ResourceTypeEnum.Board,
+          userId: obj.ownerId,
+          role: PermissionRoleEnum.Owner,
+        } as CreatePermissionDto);
+      }
+
+      return obj;
+    } catch (err: unknown) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   findAll() {
@@ -36,12 +66,21 @@ export class BoardsService {
   }
 
   async findMyAll(userId: string) {
-    return this.boardRepository
-      .createQueryBuilder('board')
-      .where('board.owner_id = :userId', { userId })
-      .orWhere('board.collaborator_ids @> :userIdAsJsonb', {
-        userIdAsJsonb: JSON.stringify([userId]),
-      })
-      .getMany();
+    const permissions = await this.permissionsService.findAllBy(
+      userId,
+      ResourceTypeEnum.Board,
+    );
+
+    const boardIds = permissions.map((permission) => permission.resourceId);
+
+    if (boardIds.length === 0) {
+      return [];
+    }
+
+    return await this.boardRepository.find({
+      where: {
+        id: In(boardIds),
+      },
+    });
   }
 }

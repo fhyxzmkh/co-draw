@@ -1,34 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreatePermissionDto } from './dto/create-permission.dto';
-import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Permission } from './entities/permission.entity';
+import { ResourceTypeEnum } from './entities/resource-type.enum';
 
 @Injectable()
 export class PermissionsService {
+  private readonly logger = new Logger('PermissionsService');
+
   constructor(
     @InjectRepository(Permission)
     private permissionsRepository: Repository<Permission>,
   ) {}
 
   create(createPermissionDto: CreatePermissionDto) {
-    return 'This action adds a new permission';
+    const permission = this.permissionsRepository.create(createPermissionDto);
+    return this.permissionsRepository.save(permission);
   }
 
-  findAll() {
-    return `This action returns all permissions`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} permission`;
-  }
-
-  update(id: number, updatePermissionDto: UpdatePermissionDto) {
-    return `This action updates a #${id} permission`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} permission`;
+  async findAllBy(userId: string, type: ResourceTypeEnum) {
+    return await this.permissionsRepository.findBy({
+      userId: userId,
+      resourceType: type,
+    });
   }
 }

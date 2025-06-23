@@ -1,1 +1,5 @@
-export class CreateDocumentDto {}
+export class CreateDocumentDto {
+  title: string;
+  description: string;
+  ownerId: string;
+}

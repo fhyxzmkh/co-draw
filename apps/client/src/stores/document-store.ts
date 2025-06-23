@@ -1,9 +1,9 @@
-export interface BoardInfo {
+export interface DocumentInfo {
   id: string;
   title: string;
   description: string;
   ownerId: string;
-  content: JSON;
+  content: string;
   createdAt: string;
   updatedAt: string;
 }
