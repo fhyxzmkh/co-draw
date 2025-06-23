@@ -2,33 +2,42 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity({ name: 'board' })
+@Entity({ schema: 'public', name: 'board' })
 export class Board {
-  @PrimaryColumn('varchar', { length: 32 })
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('varchar', { length: 32, unique: true })
+  @Column({ type: 'varchar', length: 32, nullable: false, unique: true })
   title: string;
 
-  @Column('varchar', { length: 128 })
-  description: string;
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  description: string | null;
 
-  @Column('varchar', { length: 32, name: 'owner_id' })
+  @Column({ type: 'uuid', nullable: false })
   ownerId: string;
 
-  @Column('json')
-  content: JSON;
+  @Column({ type: 'json', nullable: true })
+  collaboratorIds: object | null;
 
-  @Column('json', { name: 'collaborator_ids' })
-  collaboratorIds: JSON;
+  @Column({ type: 'json', nullable: true })
+  content: object | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

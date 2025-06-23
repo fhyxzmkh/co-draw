@@ -4,7 +4,6 @@ import { UpdateBoardDto } from './dto/update-board.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Board } from './entities/board.entity';
 import { Repository } from 'typeorm';
-import { generateCustomNanoId } from '../tools/security-tools';
 
 @Injectable()
 export class BoardsService {
@@ -17,7 +16,6 @@ export class BoardsService {
 
   create(createBoardDto: CreateBoardDto) {
     const newBoard = this.boardRepository.create(createBoardDto);
-    newBoard.id = generateCustomNanoId(32);
     return this.boardRepository.save(newBoard);
   }
 
@@ -41,9 +39,7 @@ export class BoardsService {
     return this.boardRepository
       .createQueryBuilder('board')
       .where('board.owner_id = :userId', { userId })
-      .orWhere('JSON_CONTAINS(board.collaborator_ids, :userIdJson)', {
-        userIdJson: JSON.stringify([userId]),
-      })
+      .orWhere('board.collaborator_ids ? :userId', { userId })
       .getMany();
   }
 }

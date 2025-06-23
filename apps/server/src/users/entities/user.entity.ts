@@ -3,23 +3,32 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 
-@Entity({ name: 'user' })
+@Entity({ schema: 'public', name: 'user' })
 export class User {
-  @PrimaryColumn('varchar', { length: 32 })
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('varchar', { length: 36, unique: true })
+  @Column({ type: 'varchar', length: 36, unique: true, nullable: false })
   username: string;
 
-  @Column('varchar', { length: 512 })
+  @Column({ type: 'varchar', length: 256, nullable: false })
   password: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

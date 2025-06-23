@@ -1,7 +1,6 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
-import { generateCustomNanoId } from 'src/tools/security-tools';
 import { verifyTurnstileToken } from '../tools/cloudflare-tools';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
@@ -67,7 +66,6 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, this.saltRounds);
     const registerResult = await this.usersService.createUser({
-      id: generateCustomNanoId(32),
       username: username,
       password: hashedPassword,
     });
