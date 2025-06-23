@@ -17,13 +17,13 @@ export class Board {
   @Column({ type: 'varchar', length: 128, nullable: true })
   description: string | null;
 
-  @Column({ type: 'uuid', nullable: false })
+  @Column({ type: 'uuid', nullable: false, name: 'owner_id' })
   ownerId: string;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true, name: 'collaborator_ids' })
   collaboratorIds: object | null;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   content: object | null;
 
   @CreateDateColumn({

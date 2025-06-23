@@ -21,8 +21,8 @@ import { SocketModule } from './socket/socket.module';
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_SCHEME,
-      autoLoadEntities: true, // TypeORM 会自动加载所有实体
-      synchronize: true, // 仅在开发环境设置为 true
+      autoLoadEntities: true,
+      synchronize: false,
     }),
     UsersModule,
     AuthModule,

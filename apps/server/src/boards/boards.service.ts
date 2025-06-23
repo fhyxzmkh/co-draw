@@ -39,7 +39,9 @@ export class BoardsService {
     return this.boardRepository
       .createQueryBuilder('board')
       .where('board.owner_id = :userId', { userId })
-      .orWhere('board.collaborator_ids ? :userId', { userId })
+      .orWhere('board.collaborator_ids @> :userIdAsJsonb', {
+        userIdAsJsonb: JSON.stringify([userId]),
+      })
       .getMany();
   }
 }
