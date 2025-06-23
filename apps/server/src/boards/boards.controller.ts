@@ -42,8 +42,8 @@ export class BoardsController {
     return this.boardsService.update(id, updateBoardDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.boardsService.remove(id);
+  @Delete()
+  remove(@Query('userId') userId: string, @Query('fileId') fileId: string) {
+    return this.boardsService.remove(userId, fileId);
   }
 }

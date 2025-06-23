@@ -54,12 +54,13 @@ export class DocumentsService {
     return this.documentRepository.findOneBy({ id });
   }
 
-  update(id: number, updateDocumentDto: UpdateDocumentDto) {
+  update(id: string, updateDocumentDto: UpdateDocumentDto) {
     return this.documentRepository.update(id, updateDocumentDto);
   }
 
-  remove(id: string) {
-    return this.documentRepository.delete(id);
+  async remove(userId: string, fileId: string) {
+    await this.permissionsService.removeBy(userId, fileId);
+    return this.documentRepository.delete(fileId);
   }
 
   async findMyAll(userId: string) {

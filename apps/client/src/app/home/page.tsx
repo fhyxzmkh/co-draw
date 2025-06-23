@@ -172,7 +172,9 @@ export default function HomePage() {
     const { name, endpoint } = fileTypeMap[type];
 
     try {
-      const response = await axios_instance.delete(`/${endpoint}/${id}`);
+      const response = await axios_instance.delete(
+        `/${endpoint}?userId=${userInfo?.id}&fileId=${id}`,
+      );
       if (response.status === 200) {
         toast.success(`${name}删除成功`);
         fetchItems(activeTab); // 刷新当前列表

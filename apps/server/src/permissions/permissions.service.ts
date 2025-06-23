@@ -25,4 +25,11 @@ export class PermissionsService {
       resourceType: type,
     });
   }
+
+  async removeBy(userId: string, fileId: string) {
+    await this.permissionsRepository.delete({
+      userId: userId,
+      resourceId: fileId,
+    });
+  }
 }

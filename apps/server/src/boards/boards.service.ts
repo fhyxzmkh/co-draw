@@ -61,8 +61,9 @@ export class BoardsService {
     return this.boardRepository.update(id, updateBoardDto);
   }
 
-  remove(id: string) {
-    return this.boardRepository.delete(id);
+  async remove(userId: string, fileId: string) {
+    await this.permissionsService.removeBy(userId, fileId);
+    return this.boardRepository.delete(fileId);
   }
 
   async findMyAll(userId: string) {
