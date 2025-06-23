@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -19,9 +19,8 @@ import { Turnstile } from "@marsidev/react-turnstile";
 import axios from "axios";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { axios_login_instance } from "@/config/configuration";
+import { axios_instance } from "@/config/configuration";
 import { useUserStore } from "@/stores/user-store";
-import { jwtDecode } from "jwt-decode";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,14 +34,6 @@ export default function LoginPage() {
   const [turnstileToken, setTurnstileToken] = useState<string>("");
 
   const setUserInfo = useUserStore((state) => state.setUserInfo);
-
-  useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      axios_login_instance.defaults.headers.common["Authorization"] =
-        `Bearer ${token}`;
-    }
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,34 +50,31 @@ export default function LoginPage() {
 
     if (Object.keys(newErrors).length === 0) {
       try {
-        const data = await axios.post("http://localhost:6789/auth/login", {
+        const response = await axios_instance.post("/auth/login", {
           username: loginForm.username,
           password: loginForm.password,
           turnstileToken: turnstileToken,
         });
 
-        const access_token = data.data.access_token;
-        if (access_token) {
-          const decoded: any = jwtDecode(access_token);
+        if (response.data.message === "success") {
+          const profile = await axios_instance.get("/auth/profile");
           setUserInfo({
-            id: decoded.sub,
-            username: decoded.username,
+            id: profile.data.sub,
+            username: profile.data.username,
           });
 
-          localStorage.setItem("access_token", access_token);
-          axios_login_instance.defaults.headers.common["Authorization"] =
-            `Bearer ${access_token}`;
           setLoginForm({ username: "", password: "" });
           toast.success("Login successful");
           router.push("/home");
         }
       } catch (error: unknown) {
-        localStorage.removeItem("access_token");
         if (axios.isAxiosError(error) && error.response) {
           toast.error(error.response.data.message);
         } else {
           toast.error("Unknown error");
         }
+      } finally {
+        // todo：重置 Turnstile 验证
       }
     }
   };

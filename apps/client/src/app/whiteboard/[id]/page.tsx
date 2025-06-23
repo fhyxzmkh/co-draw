@@ -9,7 +9,7 @@ import WhiteboardCanvas, {
 } from "@/components/whiteboard/whiteboard-canvas";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { axios_login_instance } from "@/config/configuration";
+import { axios_instance } from "@/config/configuration";
 import { useSocketStore } from "@/stores/socket-store";
 
 export default function WhiteboardPage() {
@@ -27,7 +27,7 @@ export default function WhiteboardPage() {
 
   const handleSave = async (data: object) => {
     try {
-      await axios_login_instance.patch(`/boards/${id}`, {
+      await axios_instance.patch(`/boards/${id}`, {
         content: JSON.stringify(data),
       });
       toast.success("保存成功！");

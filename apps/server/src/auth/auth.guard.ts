@@ -12,26 +12,31 @@ export class AuthGuard implements CanActivate {
   constructor(private jwtService: JwtService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
+    const request = context.switchToHttp().getRequest<Request>();
+    // 从 cookie 中提取 token
+    const token = this.extractTokenFromCookie(request);
     if (!token) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('No token provided');
     }
     try {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: process.env.JWT_KEY,
       });
-      // 💡 We're assigning the payload to the request object here
-      // so that we can access it in our route handlers
       request['user'] = payload;
     } catch {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Invalid token');
     }
     return true;
   }
 
-  private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+  private extractTokenFromCookie(request: Request): string | undefined {
+    // 从 request.cookies 对象中获取 access_token
+    const accessToken = request.cookies['access_token'];
+    if (!accessToken) {
+      return undefined;
+    }
+
+    const [type, token] = accessToken.split(' ') ?? [];
     return type === 'Bearer' ? token : undefined;
   }
 }

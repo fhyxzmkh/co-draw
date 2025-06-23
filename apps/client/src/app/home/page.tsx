@@ -56,7 +56,7 @@ import {
 import { useUserStore } from "@/stores/user-store";
 import { BoardInfo } from "@/stores/board-store";
 import { toast } from "sonner";
-import { axios_login_instance } from "@/config/configuration";
+import { axios_instance } from "@/config/configuration";
 
 export default function HomePage() {
   const [whiteboards, setWhiteboards] = useState<BoardInfo[]>([]);
@@ -78,9 +78,7 @@ export default function HomePage() {
 
   // 获取白板
   const findAllWhiteboards = async () => {
-    const data = await axios_login_instance.get(
-      `/boards/my?userId=${userInfo?.id}`,
-    );
+    const data = await axios_instance.get(`/boards/my?userId=${userInfo?.id}`);
 
     setWhiteboards(data.data as BoardInfo[]);
   };
@@ -94,7 +92,7 @@ export default function HomePage() {
       toast.warning("Please enter a title");
     }
 
-    const data = await axios_login_instance.post(`/boards`, {
+    const data = await axios_instance.post(`/boards`, {
       title: title,
       description: description,
       ownerId: userInfo?.id,
@@ -118,7 +116,7 @@ export default function HomePage() {
         toast.warning("Please enter a title");
       }
 
-      const data = await axios_login_instance.patch(`/boards/${id}`, {
+      const data = await axios_instance.patch(`/boards/${id}`, {
         title: title,
         description: description,
       });
@@ -133,7 +131,7 @@ export default function HomePage() {
 
   // 删除白板
   const handleDeleteBoard = async (id: string) => {
-    const data = await axios_login_instance.delete(`/boards/${id}`);
+    const data = await axios_instance.delete(`/boards/${id}`);
     if (data.status === 200) {
       toast.success("Board successfully deleted");
     }

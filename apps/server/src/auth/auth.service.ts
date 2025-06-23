@@ -78,7 +78,7 @@ export class AuthService {
     return { message: 'success' };
   }
 
-  async login(userInfo: LoginDto): Promise<any> {
+  async login(userInfo: LoginDto): Promise<{ access_token: string }> {
     const { username, password, turnstileToken, clientIp } = userInfo;
 
     if (
