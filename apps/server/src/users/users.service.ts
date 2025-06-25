@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 
@@ -26,5 +26,13 @@ export class UsersService {
   async createUser(createUserDto: CreateUserDto): Promise<User> {
     const newUser = this.usersRepository.create(createUserDto);
     return this.usersRepository.save(newUser);
+  }
+
+  // 根据用户ID列表查询用户详情列表
+  async findByIds(userIds: string[]): Promise<User[]> {
+    return await this.usersRepository.find({
+      where: { id: In(userIds) },
+      select: ['id', 'username', 'createdAt', 'updatedAt'],
+    });
   }
 }

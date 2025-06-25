@@ -11,17 +11,23 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { axios_instance } from "@/config/configuration";
 import { useSocketStore } from "@/stores/socket-store";
-import CollaboratorsDialog from "@/components/common/collaborators-dialog";
+import CollaboratorsDialog, {
+  Permission,
+} from "@/components/common/collaborators-dialog";
+import { useUserStore } from "@/stores/user-store";
 
 export default function WhiteboardPage() {
   const params = useParams();
   const id = params.id;
 
   const [isCollaboratorsOpen, setIsCollaboratorsOpen] = useState(false);
+  const [permissionRole, setPermissionRole] = useState("");
 
   const whiteboardRef = useRef<WhiteboardRef>(null);
 
   const { connect, disconnect } = useSocketStore();
+
+  const userInfo = useUserStore((state) => state.userInfo);
 
   const triggerSave = () => {
     // 通过 ref 调用子组件的方法，子组件会通过 onSave prop 回传数据
@@ -45,6 +51,13 @@ export default function WhiteboardPage() {
     console.log("分享白板");
   };
 
+  const getPermission = async () => {
+    const response = await axios_instance.get(
+      `/boards/role?userId=${userInfo?.id}&boardId=${id}`,
+    );
+    setPermissionRole(response.data);
+  };
+
   useEffect(() => {
     connect(id as string);
 
@@ -53,6 +66,10 @@ export default function WhiteboardPage() {
       disconnect();
     };
   }, [connect, disconnect, id]);
+
+  useEffect(() => {
+    getPermission();
+  }, [id, userInfo]);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -107,13 +124,13 @@ export default function WhiteboardPage() {
         />
       </main>
 
-      {/* 协作者管理对话框 */}
+      {/*协作者管理对话框 */}
       <CollaboratorsDialog
         open={isCollaboratorsOpen}
         onOpenChange={setIsCollaboratorsOpen}
         whiteboardId={id as string}
-        currentUserPermission={"owner"}
-        currentUserId={"1"}
+        currentUserPermission={permissionRole as Permission}
+        currentUserId={userInfo?.id as string}
       />
     </div>
   );

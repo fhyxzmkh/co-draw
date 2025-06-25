@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Logger,
 } from '@nestjs/common';
 import { BoardsService } from './boards.service';
 import { CreateBoardDto } from './dto/create-board.dto';
@@ -14,6 +15,8 @@ import { UpdateBoardDto } from './dto/update-board.dto';
 
 @Controller('boards')
 export class BoardsController {
+  private readonly logger = new Logger('BoardsController');
+
   constructor(private readonly boardsService: BoardsService) {}
 
   @Post()
@@ -30,6 +33,21 @@ export class BoardsController {
   @Get('/my')
   findMyAll(@Query('userId') userId: string) {
     return this.boardsService.findMyAll(userId);
+  }
+
+  // 返回我的协作身份
+  @Get('/role')
+  findMyRole(
+    @Query('userId') userId: string,
+    @Query('boardId') boardId: string,
+  ) {
+    return this.boardsService.findMyRole(userId, boardId);
+  }
+
+  // 返回白板的所有参与者
+  @Get('/participants')
+  findAllParticipants(@Query('boardId') boardId: string) {
+    return this.boardsService.findAllParticipants(boardId);
   }
 
   @Get(':id')

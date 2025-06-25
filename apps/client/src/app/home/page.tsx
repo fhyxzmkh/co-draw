@@ -140,6 +140,11 @@ export default function HomePage() {
   const handleEditItem = async () => {
     if (!editingItem) return;
 
+    if (editingItem.ownerId !== userInfo?.id) {
+      toast.warning("你没有权限编辑此文件");
+      return;
+    }
+
     const { id, type, title, description } = editingItem;
     const { name, endpoint } = fileTypeMap[type];
 
@@ -167,6 +172,11 @@ export default function HomePage() {
 
   const handleDeleteItem = async () => {
     if (!deletingItem) return;
+
+    if (deletingItem.ownerId !== userInfo?.id) {
+      toast.warning("你没有权限删除此文件");
+      return;
+    }
 
     const { id, type } = deletingItem;
     const { name, endpoint } = fileTypeMap[type];

@@ -584,17 +584,17 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
               <Button variant="outline" size="sm" onClick={exportCanvas}>
                 <Download className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" asChild>
-                <label>
-                  <Upload className="h-4 w-4" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={importImage}
-                    className="hidden"
-                  />
-                </label>
-              </Button>
+              {/*<Button variant="outline" size="sm" asChild>*/}
+              {/*  <label>*/}
+              {/*    <Upload className="h-4 w-4" />*/}
+              {/*    <input*/}
+              {/*      type="file"*/}
+              {/*      accept="image/*"*/}
+              {/*      onChange={importImage}*/}
+              {/*      className="hidden"*/}
+              {/*    />*/}
+              {/*  </label>*/}
+              {/*</Button>*/}
             </div>
           </div>
 

@@ -84,4 +84,20 @@ export class BoardsService {
       },
     });
   }
+
+  async findMyRole(userId: string, boardId: string) {
+    const p = await this.permissionsService.findOneBy(
+      userId,
+      boardId,
+      ResourceTypeEnum.Board,
+    );
+
+    return p?.role;
+  }
+
+  async findAllParticipants(boardId: string) {
+    return await this.permissionsService.findAllParticipantsByResourceId(
+      boardId,
+    );
+  }
 }
