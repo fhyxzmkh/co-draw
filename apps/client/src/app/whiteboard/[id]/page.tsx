@@ -13,15 +13,18 @@ import { axios_instance } from "@/config/configuration";
 import { useSocketStore } from "@/stores/socket-store";
 import CollaboratorsDialog, {
   Permission,
+  PERMISSION_CONFIG,
 } from "@/components/common/collaborators-dialog";
 import { useUserStore } from "@/stores/user-store";
+import { Badge } from "@/components/ui/badge";
 
 export default function WhiteboardPage() {
   const params = useParams();
   const id = params.id;
 
   const [isCollaboratorsOpen, setIsCollaboratorsOpen] = useState(false);
-  const [permissionRole, setPermissionRole] = useState("");
+
+  const [permissionRole, setPermissionRole] = useState<Permission | null>(null);
 
   const whiteboardRef = useRef<WhiteboardRef>(null);
 
@@ -71,6 +74,10 @@ export default function WhiteboardPage() {
     getPermission();
   }, [id, userInfo]);
 
+  const PermissionIcon = permissionRole
+    ? PERMISSION_CONFIG[permissionRole].icon
+    : null;
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* 白板头部工具栏 */}
@@ -89,7 +96,21 @@ export default function WhiteboardPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <>
+              {permissionRole && PermissionIcon ? (
+                <Badge
+                  variant="outline"
+                  className={`${PERMISSION_CONFIG[permissionRole].color} border-2`}
+                >
+                  <PermissionIcon className="h-3.5 w-3.5 mr-1.5" />
+                  你是: {PERMISSION_CONFIG[permissionRole].label}
+                </Badge>
+              ) : (
+                <Badge variant="secondary">正在加载权限...</Badge>
+              )}
+            </>
+
             <Button variant="outline" size="sm" onClick={triggerSave}>
               <Save className="h-4 w-4 mr-2" />
               保存
@@ -121,6 +142,7 @@ export default function WhiteboardPage() {
           boardId={id as string}
           ref={whiteboardRef}
           onSave={handleSave}
+          currentUserPermission={permissionRole as Permission}
         />
       </main>
 

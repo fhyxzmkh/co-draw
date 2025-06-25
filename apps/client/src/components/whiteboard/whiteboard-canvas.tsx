@@ -19,7 +19,6 @@ import {
   Palette,
   Trash2,
   Download,
-  Upload,
   Square,
   Circle,
   Type,
@@ -27,12 +26,14 @@ import {
 } from "lucide-react";
 import { nanoid } from "nanoid";
 import { useSocketStore } from "@/stores/socket-store";
+import { Permission } from "@/components/common/collaborators-dialog";
 
 interface WhiteboardCanvasProps {
   width?: number;
   height?: number;
   boardId: string;
   onSave?: (data: object) => void;
+  currentUserPermission: Permission;
 }
 
 export interface WhiteboardRef {
@@ -67,7 +68,13 @@ const COLORS = [
 
 const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
   (
-    { width = 1200, height = 800, boardId, onSave }: WhiteboardCanvasProps,
+    {
+      width = 1200,
+      height = 800,
+      boardId,
+      onSave,
+      currentUserPermission,
+    }: WhiteboardCanvasProps,
     ref,
   ) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);

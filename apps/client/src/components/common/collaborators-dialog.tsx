@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-// 导入所有需要的 UI 组件和图标
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -38,7 +36,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Users,
@@ -78,7 +75,7 @@ interface CollaboratorsDialogProps {
 // --- 配置 ---
 
 // 权限配置
-const PERMISSION_CONFIG: Record<
+export const PERMISSION_CONFIG: Record<
   Permission,
   { label: string; description: string; color: string; icon: React.ElementType }
 > = {
