@@ -49,10 +49,10 @@ export default function WhiteboardPage() {
     }
   };
 
-  const handleShare = () => {
-    // 这里可以实现分享白板的逻辑
-    console.log("分享白板");
-  };
+  // const handleShare = () => {
+  //   // 这里可以实现分享白板的逻辑
+  //   console.log("分享白板");
+  // };
 
   const getPermission = async () => {
     const response = await axios_instance.get(
@@ -123,10 +123,10 @@ export default function WhiteboardPage() {
               <Users className="h-4 w-4 mr-2" />
               协作者
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare}>
-              <Share2 className="h-4 w-4 mr-2" />
-              分享
-            </Button>
+            {/*<Button variant="outline" size="sm" onClick={handleShare}>*/}
+            {/*  <Share2 className="h-4 w-4 mr-2" />*/}
+            {/*  分享*/}
+            {/*</Button>*/}
             <Button variant="outline" size="sm">
               <Settings className="h-4 w-4" />
             </Button>

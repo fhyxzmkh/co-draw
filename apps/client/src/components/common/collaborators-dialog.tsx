@@ -48,11 +48,14 @@ import {
   UserPlus,
 } from "lucide-react";
 import { axios_instance } from "@/config/configuration";
+import { toast } from "sonner";
 
 // --- 类型定义 ---
 
 // 权限类型
 export type Permission = "owner" | "editor" | "viewer";
+
+export type ResourceType = "board" | "document";
 
 // 协作者接口
 interface Collaborator {
@@ -67,7 +70,8 @@ interface Collaborator {
 interface CollaboratorsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  whiteboardId: string;
+  resourceId: string;
+  resourceType: ResourceType;
   currentUserPermission: Permission;
   currentUserId: string;
 }
@@ -102,7 +106,8 @@ export const PERMISSION_CONFIG: Record<
 export default function CollaboratorsDialog({
   open,
   onOpenChange,
-  whiteboardId,
+  resourceId,
+  resourceType,
   currentUserPermission,
   currentUserId,
 }: CollaboratorsDialogProps) {
@@ -122,29 +127,46 @@ export default function CollaboratorsDialog({
 
   // 拉取协作者列表
   const getCollaborators = async () => {
-    const response = await axios_instance.get(
-      `/boards/participants?boardId=${whiteboardId}`,
-    );
+    if (resourceType === "board") {
+      const response = await axios_instance.get(
+        `/boards/participants?boardId=${resourceId}`,
+      );
 
-    setCollaborators(response.data);
+      setCollaborators(response.data);
+    }
+    if (resourceType === "document") {
+      // todo
+    }
   };
 
   useEffect(() => {
     if (open) {
       getCollaborators();
     }
-  }, [open, whiteboardId]);
+  }, [open, resourceId]);
 
   // 发送邀请
-  const sendInvite = () => {
-    // todo: 实现邀请逻辑
-    console.log(
-      `TODO: 邀请用户 "${inviteUsername}" 作为 "${invitePermission}" 加入白板 ${whiteboardId}`,
-    );
-    alert(
-      `邀请功能待开发：\n用户名: ${inviteUsername}\n权限: ${invitePermission}`,
-    );
-    setInviteUsername("");
+  const sendInvite = async () => {
+    try {
+      const response = await axios_instance.post(
+        `/messages/invitation/create`,
+        {
+          fromUserId: currentUserId,
+          toUsername: inviteUsername,
+          resourceId: resourceId,
+          permission: invitePermission,
+        },
+      );
+
+      if (response.status === 201) {
+        toast.success("邀请成功，等待对方确认");
+      }
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+      console.error(error);
+    } finally {
+      setInviteUsername("");
+    }
   };
 
   // 更新协作者权限

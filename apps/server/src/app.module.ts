@@ -9,6 +9,7 @@ import { BoardsModule } from './boards/boards.module';
 import { SocketModule } from './socket/socket.module';
 import { DocumentsModule } from './documents/documents.module';
 import { PermissionsModule } from './permissions/permissions.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { PermissionsModule } from './permissions/permissions.module';
     SocketModule,
     DocumentsModule,
     PermissionsModule,
+    MessagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

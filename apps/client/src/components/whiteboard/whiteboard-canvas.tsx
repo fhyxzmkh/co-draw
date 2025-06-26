@@ -86,6 +86,8 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
     const sk = useSocketStore((state) => state.socket);
 
+    const isReadOnly = currentUserPermission === "viewer";
+
     useEffect(() => {
       if (!canvasRef.current) return;
 
@@ -98,16 +100,27 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
       fabricCanvasRef.current = canvas;
 
-      // 设置初始绘图模式
-      canvas.isDrawingMode = true;
-      canvas.freeDrawingBrush.color = brushColor;
-      canvas.freeDrawingBrush.width = brushWidth[0];
+      // --- 权限控制 ---
+      // 初始化时根据权限设置画布交互性
+      if (isReadOnly) {
+        canvas.isDrawingMode = false;
+        canvas.selection = false;
+        canvas.forEachObject((obj) => {
+          obj.selectable = false;
+          obj.evented = false;
+        });
+        canvas.defaultCursor = "not-allowed";
+      } else {
+        canvas.isDrawingMode = true;
+        canvas.freeDrawingBrush.color = brushColor;
+        canvas.freeDrawingBrush.width = brushWidth[0];
+      }
 
       // 监听绘图事件
       canvas.on("path:created", (e: any) => {
+        if (isReadOnly || !e.path) return;
         setIsDrawing(false);
 
-        if (!e.path) return;
         e.path.set("id", nanoid().toString());
         const objectData = e.path.toJSON(["id"]);
 
@@ -118,6 +131,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
       });
 
       canvas.on("mouse:down", () => {
+        if (isReadOnly) return;
         setIsDrawing(true);
       });
 
@@ -126,7 +140,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
       });
 
       canvas.on("object:modified", (e) => {
-        if (!e.target) return;
+        if (isReadOnly || !e.target) return;
 
         // e.target 就是被修改的那个对象
         const modifiedObject: any = e.target;
@@ -149,17 +163,62 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
       return () => {
         canvas.dispose();
       };
-    }, []);
+    }, [isReadOnly]);
+
+    // 使用一个单独的 useEffect 来处理权限变化对现有画布的影响
+    useEffect(() => {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+
+      const setCanvasInteractivity = (isInteractive: boolean) => {
+        canvas.isDrawingMode = isInteractive
+          ? currentTool === "pen" || currentTool === "eraser"
+          : false;
+        canvas.selection = isInteractive;
+        canvas.defaultCursor = isInteractive ? "default" : "not-allowed";
+
+        canvas.forEachObject((obj) => {
+          obj.selectable = isInteractive;
+          obj.evented = isInteractive;
+        });
+
+        canvas.renderAll();
+      };
+
+      if (isReadOnly) {
+        setCanvasInteractivity(false);
+      } else {
+        setCanvasInteractivity(true);
+        // 确保工具状态正确
+        handleToolChange(currentTool);
+      }
+    }, [isReadOnly, fabricCanvasRef.current]);
 
     useEffect(() => {
       const canvas = fabricCanvasRef.current;
 
       if (!canvas || !sk) return;
 
+      const handleIncomingObject = (fabricObject: any) => {
+        // 观察者接收到的对象也应是不可交互的
+        if (isReadOnly) {
+          fabricObject.selectable = false;
+          fabricObject.evented = false;
+        }
+        canvas.add(fabricObject);
+        canvas.renderAll();
+      };
+
       // 监听 'initialState' 事件
       sk.on("initialState", (boardContent) => {
         if (boardContent && fabricCanvasRef.current) {
           fabricCanvasRef.current.loadFromJSON(boardContent, () => {
+            if (isReadOnly) {
+              fabricCanvasRef.current?.forEachObject((obj) => {
+                obj.selectable = false;
+                obj.evented = false;
+              });
+            }
             fabricCanvasRef.current?.renderAll();
           });
         }
@@ -167,26 +226,27 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
       // 监听 "drawing" 广播
       sk.on("drawing", (object) => {
-        // 使用 fabric.util.enlivenObjects 将 JSON 对象转换回 fabric 对象
         fabric.util.enlivenObjects(
           [object],
-          (objects: any) => {
-            const fabricObject = objects[0];
-            canvas.add(fabricObject);
-            canvas.renderAll();
-          },
+          (objects: any) => handleIncomingObject(objects[0]),
           "",
         );
       });
 
       // 监听 "object:modified" 广播
       sk.on("object:modified", (object) => {
-        // 找到画布上对应的对象并更新它
         const objToUpdate = canvas
           .getObjects()
           .find((o: any) => o.id === object.id);
         if (objToUpdate) {
+          // 更新对象属性，保留其交互性设置
+          const isSelectable = objToUpdate.selectable;
+          const isEvented = objToUpdate.evented;
           objToUpdate.set(object);
+          objToUpdate.set({
+            selectable: isSelectable,
+            evented: isEvented,
+          });
           canvas.renderAll();
         }
       });
@@ -195,18 +255,13 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
       sk.on("objects:removed", (objectIds: string[]) => {
         if (!fabricCanvasRef.current || !objectIds || objectIds.length === 0)
           return;
-
         const canvas = fabricCanvasRef.current;
-
         const objectsToRemove = canvas
           .getObjects()
           .filter((obj: any) => objectIds.includes(obj.id));
-
         if (objectsToRemove.length > 0) {
           canvas.remove(...objectsToRemove);
-
           canvas.renderAll();
-          console.log(`Removed ${objectsToRemove.length} objects.`);
         }
       });
 
@@ -226,10 +281,11 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
         sk.off("objects:removed");
         sk.off("canvas:cleared");
       };
-    }, [sk]);
+    }, [sk, isReadOnly]);
 
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
+        if (isReadOnly) return;
         if (e.key === "Delete" || e.key === "Backspace") {
           deleteSelectedObjects();
         }
@@ -238,7 +294,13 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
       return () => {
         window.removeEventListener("keydown", handleKeyDown);
       };
-    }, [fabricCanvasRef.current]);
+    }, [fabricCanvasRef.current, isReadOnly]);
+
+    useEffect(() => {
+      if (fabricCanvasRef.current && !isReadOnly) {
+        fabricCanvasRef.current.freeDrawingBrush.width = brushWidth[0];
+      }
+    }, [brushWidth, isReadOnly]);
 
     // 更新画笔颜色
     useEffect(() => {
@@ -256,7 +318,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
     // 切换工具
     const handleToolChange = (tool: Tool) => {
-      if (!fabricCanvasRef.current) return;
+      if (!fabricCanvasRef.current || isReadOnly) return;
 
       setCurrentTool(tool);
       const canvas = fabricCanvasRef.current;
@@ -288,7 +350,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
     // 添加矩形
     const addRectangle = () => {
-      if (!fabricCanvasRef.current) return;
+      if (!fabricCanvasRef.current || isReadOnly) return;
 
       const rect = new fabric.Rect({
         // @ts-ignore
@@ -313,7 +375,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
     // 添加圆形
     const addCircle = () => {
-      if (!fabricCanvasRef.current) return;
+      if (!fabricCanvasRef.current || isReadOnly) return;
 
       const circle = new fabric.Circle({
         // @ts-ignore
@@ -337,7 +399,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
     // 添加文本
     const addText = () => {
-      if (!fabricCanvasRef.current) return;
+      if (!fabricCanvasRef.current || isReadOnly) return;
 
       const text = new fabric.IText("双击编辑文本", {
         // @ts-ignore
@@ -361,7 +423,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
     // 删除选中的对象
     const deleteSelectedObjects = () => {
       const canvas = fabricCanvasRef.current;
-      if (!canvas) return;
+      if (!canvas || isReadOnly) return;
 
       const activeObjects = canvas.getActiveObjects(); // 获取所有选中的对象
       if (activeObjects.length === 0) return;
@@ -387,6 +449,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
     // 清空画布
     const clearCanvas = () => {
+      if (isReadOnly) return;
       if (fabricCanvasRef.current) {
         const socket = useSocketStore.getState().socket;
         if (socket) {
@@ -411,21 +474,21 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
     };
 
     // 导入图片
-    const importImage = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file || !fabricCanvasRef.current) return;
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const imgUrl = e.target?.result as string;
-        fabric.Image.fromURL(imgUrl, (img) => {
-          img.scaleToWidth(200);
-          fabricCanvasRef.current?.add(img);
-          fabricCanvasRef.current?.renderAll();
-        });
-      };
-      reader.readAsDataURL(file);
-    };
+    // const importImage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //   const file = event.target.files?.[0];
+    //   if (!file || !fabricCanvasRef.current) return;
+    //
+    //   const reader = new FileReader();
+    //   reader.onload = (e) => {
+    //     const imgUrl = e.target?.result as string;
+    //     fabric.Image.fromURL(imgUrl, (img) => {
+    //       img.scaleToWidth(200);
+    //       fabricCanvasRef.current?.add(img);
+    //       fabricCanvasRef.current?.renderAll();
+    //     });
+    //   };
+    //   reader.readAsDataURL(file);
+    // };
 
     useImperativeHandle(ref, () => ({
       saveCanvasAsJson: () => {
@@ -456,6 +519,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
                 variant={currentTool === "select" ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleToolChange("select")}
+                disabled={isReadOnly}
               >
                 <MousePointer className="h-4 w-4" />
               </Button>
@@ -463,6 +527,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
                 variant={currentTool === "pen" ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleToolChange("pen")}
+                disabled={isReadOnly}
               >
                 <Pen className="h-4 w-4" />
               </Button>
@@ -470,6 +535,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
                 variant={currentTool === "eraser" ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleToolChange("eraser")}
+                disabled={isReadOnly}
               >
                 <Eraser className="h-4 w-4" />
               </Button>
@@ -486,6 +552,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
                   setCurrentTool("rectangle");
                   addRectangle();
                 }}
+                disabled={isReadOnly}
               >
                 <Square className="h-4 w-4" />
               </Button>
@@ -496,6 +563,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
                   setCurrentTool("circle");
                   addCircle();
                 }}
+                disabled={isReadOnly}
               >
                 <Circle className="h-4 w-4" />
               </Button>
@@ -506,6 +574,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
                   setCurrentTool("text");
                   addText();
                 }}
+                disabled={isReadOnly}
               >
                 <Type className="h-4 w-4" />
               </Button>
@@ -515,7 +584,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
             {/* 颜色选择器 */}
             <Popover>
-              <PopoverTrigger asChild>
+              <PopoverTrigger asChild disabled={isReadOnly}>
                 <Button
                   variant="outline"
                   size="sm"
@@ -568,6 +637,7 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
                   max={50}
                   min={1}
                   step={1}
+                  disabled={isReadOnly}
                 />
               </div>
               <Badge variant="secondary" className="text-xs">
@@ -579,7 +649,12 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
 
             {/* 操作按钮 */}
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="sm" onClick={clearCanvas}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearCanvas}
+                disabled={isReadOnly}
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
