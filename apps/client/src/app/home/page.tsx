@@ -47,6 +47,7 @@ import {
   Settings,
   FileText,
   PenSquare,
+  Inbox,
 } from "lucide-react";
 import { useUserStore } from "@/stores/user-store";
 import { BoardInfo } from "@/stores/board-store";
@@ -54,6 +55,7 @@ import { DocumentInfo } from "@/stores/document-store";
 import { toast } from "sonner";
 import { axios_instance } from "@/config/configuration";
 import { useRouter } from "next/navigation";
+import { Invitation } from "@/stores/message-store";
 
 // 定义通用的文件类型
 type FileType = "whiteboard" | "document";
@@ -78,6 +80,11 @@ export default function HomePage() {
   // 创建新文件相关状态
   const [newItem, setNewItem] = useState({ title: "", description: "" });
   const [creationType, setCreationType] = useState<FileType>("whiteboard");
+
+  // 邀请列表相关状态
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [isInvitationDialogOpen, setIsInvitationDialogOpen] = useState(false);
+  const [isLoadingInvitations, setIsLoadingInvitations] = useState(false);
 
   const userInfo = useUserStore((state) => state.userInfo);
   const fileTypeMap = {
@@ -196,6 +203,59 @@ export default function HomePage() {
     }
   };
 
+  // --- 邀请相关 ---
+  const fetchInvitations = async () => {
+    setIsLoadingInvitations(true);
+    try {
+      const response = await axios_instance.get(
+        `/messages/invitation/list?userId=${userInfo?.id}`,
+      );
+
+      setInvitations(response.data);
+    } catch (error) {
+      toast.error("获取邀请列表失败");
+      console.error(error);
+    } finally {
+      setIsLoadingInvitations(false);
+    }
+  };
+
+  const handleAcceptInvitation = async (invitationId: string) => {
+    try {
+      const response = await axios_instance.patch(
+        `/messages/invitation?invitationId=${invitationId}&opt=1`,
+      );
+
+      if (response.status === 200) {
+        toast.success("已接受邀请！");
+        // 刷新邀请列表
+        await fetchInvitations();
+        // 刷新主内容区的文件列表，新接受的文件可能会出现在列表中
+        await fetchItems(activeTab);
+      }
+    } catch (error) {
+      toast.error("接受邀请失败");
+      console.error(error);
+    }
+  };
+
+  const handleDeclineInvitation = async (invitationId: string) => {
+    try {
+      const response = await axios_instance.patch(
+        `/messages/invitation?invitationId=${invitationId}&opt=0`,
+      );
+
+      if (response.status === 200) {
+        toast.info("已拒绝邀请");
+        // 仅刷新邀请列表
+        await fetchInvitations();
+      }
+    } catch (error) {
+      toast.error("拒绝邀请失败");
+      console.error(error);
+    }
+  };
+
   // --- 其他辅助函数 ---
   const logout = async () => {
     try {
@@ -223,6 +283,7 @@ export default function HomePage() {
   useEffect(() => {
     if (userInfo?.id) {
       fetchItems(activeTab);
+      fetchInvitations();
     }
   }, [userInfo, activeTab]); // 当用户或 activeTab 变化时重新获取数据
 
@@ -239,32 +300,124 @@ export default function HomePage() {
               <Users className="h-8 w-8 text-primary" />
               <h1 className="text-xl font-bold">Co Draw</h1>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>
-                      {userInfo?.username.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="hidden sm:inline">{userInfo?.username}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="px-2 py-1.5">
-                  <p className="text-sm font-medium">{userInfo?.username}</p>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  设置
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={logout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  退出登录
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-2">
+              <Dialog
+                open={isInvitationDialogOpen}
+                onOpenChange={setIsInvitationDialogOpen}
+              >
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Inbox className="h-5 w-5" />
+                    {invitations.filter((inv) => !inv.confirmed).length > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="absolute -top-1 -right-1 h-4 w-4 justify-center rounded-full p-0 text-xs"
+                      >
+                        {invitations.filter((inv) => !inv.confirmed).length}
+                      </Badge>
+                    )}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>收到的邀请</DialogTitle>
+                    <DialogDescription>
+                      在这里处理其他用户发来的协作邀请。
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="max-h-[60vh] overflow-y-auto space-y-3 p-1">
+                    {isLoadingInvitations ? (
+                      <p className="text-center text-gray-500 py-4">
+                        正在加载邀请...
+                      </p>
+                    ) : invitations.length > 0 ? (
+                      invitations.map((inv) => (
+                        <div
+                          key={inv.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        >
+                          <div className="flex-1 space-y-1">
+                            <p className="font-semibold text-gray-800">
+                              {inv.title}
+                            </p>
+                            <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                              {inv.content}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                            {inv.confirmed ? (
+                              <Badge
+                                variant="secondary"
+                                className="font-normal"
+                              >
+                                已处理
+                              </Badge>
+                            ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleAcceptInvitation(inv.id)}
+                                >
+                                  接受
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    handleDeclineInvitation(inv.id)
+                                  }
+                                >
+                                  拒绝
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <Inbox className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <h3 className="text-lg font-medium">
+                          没有待处理的邀请
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          你的收件箱是空的。
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>
+                        {userInfo?.username.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="hidden sm:inline">
+                      {userInfo?.username}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium">{userInfo?.username}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    设置
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    退出登录
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </header>

@@ -57,4 +57,12 @@ export class Message {
     name: 'resource_permission',
   })
   resourcePermission: PermissionRoleEnum;
+
+  @Column({
+    type: 'enum',
+    nullable: true,
+    enum: ResourceTypeEnum,
+    name: 'resource_type',
+  })
+  resourceType: ResourceTypeEnum;
 }

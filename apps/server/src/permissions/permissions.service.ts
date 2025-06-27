@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -6,6 +6,7 @@ import { Permission } from './entities/permission.entity';
 import { ResourceTypeEnum } from './entities/resource-type.enum';
 import { UsersService } from '../users/users.service';
 import { PermissionRoleEnum } from './entities/permission-role.enum';
+import { UpdatePermissionDto } from './dto/update-permission.dto';
 
 @Injectable()
 export class PermissionsService {
@@ -73,6 +74,32 @@ export class PermissionsService {
         ...user, // 展开用户的所有属性
         role: role, // 添加 role 属性
       };
+    });
+  }
+
+  async updateRole(data: UpdatePermissionDto) {
+    if (!data.resourceId || !data.userId) {
+      throw new BadRequestException('Resource ID and User ID are required.');
+    }
+    return await this.permissionsRepository.update(
+      {
+        resourceId: data.resourceId,
+        userId: data.userId,
+      },
+      {
+        role: data.role,
+      },
+    );
+  }
+
+  async deleteRole(data: UpdatePermissionDto) {
+    if (!data.resourceId || !data.userId) {
+      throw new BadRequestException('Resource ID and User ID are required.');
+    }
+
+    return await this.permissionsRepository.delete({
+      resourceId: data.resourceId,
+      userId: data.userId,
     });
   }
 }

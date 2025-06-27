@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, Share2, Settings, Save } from "lucide-react";
+import { ArrowLeft, Users, Settings, Save } from "lucide-react";
 import WhiteboardCanvas, {
   WhiteboardRef,
 } from "@/components/whiteboard/whiteboard-canvas";
@@ -150,7 +150,8 @@ export default function WhiteboardPage() {
       <CollaboratorsDialog
         open={isCollaboratorsOpen}
         onOpenChange={setIsCollaboratorsOpen}
-        whiteboardId={id as string}
+        resourceId={id as string}
+        resourceType={"board"}
         currentUserPermission={permissionRole as Permission}
         currentUserId={userInfo?.id as string}
       />

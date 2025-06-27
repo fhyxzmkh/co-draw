@@ -8,6 +8,7 @@ import { PermissionsService } from '../permissions/permissions.service';
 import { ResourceTypeEnum } from '../permissions/entities/resource-type.enum';
 import { PermissionRoleEnum } from '../permissions/entities/permission-role.enum';
 import { CreatePermissionDto } from '../permissions/dto/create-permission.dto';
+import { UpdatePermissionDto } from '../permissions/dto/update-permission.dto';
 
 @Injectable()
 export class BoardsService {
@@ -99,5 +100,13 @@ export class BoardsService {
     return await this.permissionsService.findAllParticipantsByResourceId(
       boardId,
     );
+  }
+
+  async updateRole(data: UpdatePermissionDto) {
+    return await this.permissionsService.updateRole(data);
+  }
+
+  async deleteRole(data: UpdatePermissionDto) {
+    return await this.permissionsService.deleteRole(data);
   }
 }

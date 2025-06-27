@@ -155,6 +155,7 @@ export default function CollaboratorsDialog({
           toUsername: inviteUsername,
           resourceId: resourceId,
           permission: invitePermission,
+          resourceType: resourceType,
         },
       );
 
@@ -170,21 +171,41 @@ export default function CollaboratorsDialog({
   };
 
   // 更新协作者权限
-  const updateCollaboratorPermission = (
+  const updateCollaboratorPermission = async (
     collaboratorId: string,
     newRole: Permission,
   ) => {
-    console.log(`正在更新 ${collaboratorId} 的权限为 ${newRole}`);
-    setCollaborators(
-      collaborators.map((c) =>
-        c.id === collaboratorId ? { ...c, role: newRole } : c,
-      ),
-    );
+    const response = await axios_instance.post("/boards/role/update", {
+      resourceId: resourceId,
+      userId: collaboratorId,
+      role: newRole,
+    });
+
+    if (response.status === 201) {
+      toast.success("权限更新成功");
+      setCollaborators(
+        collaborators.map((c) =>
+          c.id === collaboratorId ? { ...c, role: newRole } : c,
+        ),
+      );
+    } else {
+      toast.error("权限更新失败，请稍后重试");
+    }
   };
 
   // 移除协作者
-  const removeCollaborator = (collaboratorId: string) => {
-    console.log(`正在移除 ${collaboratorId}`);
+  const removeCollaborator = async (collaboratorId: string) => {
+    const response = await axios_instance.post("/boards/role/delete", {
+      resourceId: resourceId,
+      userId: collaboratorId,
+    });
+
+    if (response.status !== 201) {
+      toast.error("移除协作者失败，请稍后重试");
+      return;
+    }
+
+    toast.success("该协作者已成功移除");
     setCollaborators(collaborators.filter((c) => c.id !== collaboratorId));
     setDeletingCollaborator(null); // 关闭确认对话框
   };
