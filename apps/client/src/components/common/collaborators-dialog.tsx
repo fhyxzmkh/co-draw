@@ -135,7 +135,11 @@ export default function CollaboratorsDialog({
       setCollaborators(response.data);
     }
     if (resourceType === "document") {
-      // todo
+      const response = await axios_instance.get(
+        `/documents/participants?documentId=${resourceId}`,
+      );
+
+      setCollaborators(response.data);
     }
   };
 
@@ -175,39 +179,78 @@ export default function CollaboratorsDialog({
     collaboratorId: string,
     newRole: Permission,
   ) => {
-    const response = await axios_instance.post("/boards/role/update", {
-      resourceId: resourceId,
-      userId: collaboratorId,
-      role: newRole,
-    });
+    if (resourceType === "board") {
+      const response = await axios_instance.post("/boards/role/update", {
+        resourceId: resourceId,
+        userId: collaboratorId,
+        role: newRole,
+      });
 
-    if (response.status === 201) {
-      toast.success("权限更新成功");
-      setCollaborators(
-        collaborators.map((c) =>
-          c.id === collaboratorId ? { ...c, role: newRole } : c,
-        ),
-      );
-    } else {
-      toast.error("权限更新失败，请稍后重试");
+      if (response.status === 201) {
+        toast.success("权限更新成功");
+        setCollaborators(
+          collaborators.map((c) =>
+            c.id === collaboratorId ? { ...c, role: newRole } : c,
+          ),
+        );
+      } else {
+        toast.error("权限更新失败，请稍后重试");
+      }
+    }
+
+    if (resourceType === "document") {
+      const response = await axios_instance.post("/documents/role/update", {
+        resourceId: resourceId,
+        userId: collaboratorId,
+        role: newRole,
+      });
+
+      if (response.status === 201) {
+        toast.success("权限更新成功");
+        setCollaborators(
+          collaborators.map((c) =>
+            c.id === collaboratorId ? { ...c, role: newRole } : c,
+          ),
+        );
+      } else {
+        toast.error("权限更新失败，请稍后重试");
+      }
     }
   };
 
   // 移除协作者
   const removeCollaborator = async (collaboratorId: string) => {
-    const response = await axios_instance.post("/boards/role/delete", {
-      resourceId: resourceId,
-      userId: collaboratorId,
-    });
+    if (resourceType === "board") {
+      const response = await axios_instance.post("/boards/role/delete", {
+        resourceId: resourceId,
+        userId: collaboratorId,
+      });
 
-    if (response.status !== 201) {
-      toast.error("移除协作者失败，请稍后重试");
-      return;
+      if (response.status !== 201) {
+        toast.error("移除协作者失败，请稍后重试");
+        return;
+      }
+
+      toast.success("该协作者已成功移除");
+      setCollaborators(collaborators.filter((c) => c.id !== collaboratorId));
+      setDeletingCollaborator(null); // 关闭确认对话框
     }
 
-    toast.success("该协作者已成功移除");
-    setCollaborators(collaborators.filter((c) => c.id !== collaboratorId));
-    setDeletingCollaborator(null); // 关闭确认对话框
+    if (resourceType === "document") {
+      const response = await axios_instance.post("/documents/role/delete", {
+        resourceId: resourceId,
+        userId: collaboratorId,
+      });
+
+      if (response.status !== 201) {
+        toast.error("移除协作者失败，请稍后重试");
+        return;
+      }
+
+      toast.success("该协作者已成功移除");
+      setCollaborators(collaborators.filter((c) => c.id !== collaboratorId));
+      setDeletingCollaborator(null); // 关闭确认对话框
+    }
   };
 
   // 格式化加入时间

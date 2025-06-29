@@ -9,6 +9,7 @@ import { PermissionRoleEnum } from '../permissions/entities/permission-role.enum
 import { CreatePermissionDto } from '../permissions/dto/create-permission.dto';
 import { PermissionsService } from '../permissions/permissions.service';
 import * as Y from 'yjs';
+import { UpdatePermissionDto } from '../permissions/dto/update-permission.dto';
 
 @Injectable()
 export class DocumentsService {
@@ -86,7 +87,7 @@ export class DocumentsService {
   // 从数据库加载文档内容
   async getDocumentContent(documentId: string): Promise<Uint8Array | null> {
     const doc = await this.documentRepository.findOneBy({ id: documentId });
-    // content 在数据库中是 Buffer 类型，可以直接返回
+
     return doc ? doc.content : null;
   }
 
@@ -106,5 +107,29 @@ export class DocumentsService {
     // 将合并后的完整状态保存回数据库
     const fullState = Y.encodeStateAsUpdate(ydoc);
     await this.documentRepository.update(documentId, { content: fullState });
+  }
+
+  async findMyRole(userId: string, documentId: string) {
+    const p = await this.permissionsService.findOneBy(
+      userId,
+      documentId,
+      ResourceTypeEnum.Document,
+    );
+
+    return p?.role;
+  }
+
+  async findAllParticipants(documentId: string) {
+    return await this.permissionsService.findAllParticipantsByResourceId(
+      documentId,
+    );
+  }
+
+  async updateRole(data: UpdatePermissionDto) {
+    return await this.permissionsService.updateRole(data);
+  }
+
+  async deleteRole(data: UpdatePermissionDto) {
+    return await this.permissionsService.deleteRole(data);
   }
 }

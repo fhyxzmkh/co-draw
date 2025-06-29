@@ -4,14 +4,15 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Collaboration from "@tiptap/extension-collaboration";
 import * as Y from "yjs";
-import { useState } from "react";
-import { useYjsSocket } from "@/hooks/use-yjs-socket"; // 1. 导入你的新 Hook
+import { useEffect, useState } from "react";
+import { useYjsSocket } from "@/hooks/use-yjs-socket";
 
 interface DocumentEditorProps {
   documentId: string;
+  isEditable: boolean;
 }
 
-const DocumentEditor = ({ documentId }: DocumentEditorProps) => {
+const DocumentEditor = ({ documentId, isEditable }: DocumentEditorProps) => {
   // 为每个组件实例创建并持有一个独立的 ydoc
   const [ydoc] = useState(() => new Y.Doc());
 
@@ -20,6 +21,7 @@ const DocumentEditor = ({ documentId }: DocumentEditorProps) => {
 
   const editor = useEditor({
     immediatelyRender: false,
+    editable: isEditable,
     extensions: [
       StarterKit.configure({ history: false }),
       Collaboration.configure({
@@ -27,6 +29,12 @@ const DocumentEditor = ({ documentId }: DocumentEditorProps) => {
       }),
     ],
   });
+
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(isEditable);
+    }
+  }, [isEditable, editor]);
 
   return <EditorContent editor={editor} />;
 };
