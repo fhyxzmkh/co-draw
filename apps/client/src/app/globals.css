@@ -123,3 +123,85 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* 使用 .ProseMirror class 来限定样式只在 Tiptap 编辑器内生效 */
+/* 为了美观，可以给标题加上一些上下边距 */
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3 {
+    margin-top: 1.2em;
+    margin-bottom: 0.6em;
+    line-height: 1.1; /* 设置行高 */
+}
+
+/* 为 Tiptap 编辑器内容提供基础样式 */
+.ProseMirror {
+    /* 设置最小高度，防止编辑器太小 */
+    min-height: 150px;
+}
+
+/* 标题样式 */
+.ProseMirror h1 {
+    font-size: 2em; /* 字体大小为普通文本的2倍 */
+    font-weight: bold; /* 字体加粗 */
+}
+
+.ProseMirror h2 {
+    font-size: 1.5em; /* 字体大小为普通文本的1.5倍 */
+    font-weight: bold;
+}
+
+.ProseMirror h3 {
+    font-size: 1.17em; /* 字体大小为普通文本的1.17倍 */
+    font-weight: bold;
+}
+
+/* 你可以继续为 h3, h4, h5, h6 添加样式 */
+
+/* 列表样式 */
+.ProseMirror ul,
+.ProseMirror ol {
+    padding-left: 2rem; /* 增加左侧内边距来放置项目符号 */
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.ProseMirror ul {
+    list-style-type: disc; /* 无序列表的项目符号 */
+}
+
+.ProseMirror ol {
+    list-style-type: decimal; /* 有序列表的项目符号 */
+}
+
+.ProseMirror li {
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+}
+
+/* 其他一些有用的样式 */
+.ProseMirror p {
+    margin: 1em 0;
+}
+
+.ProseMirror blockquote {
+    border-left: 3px solid #ccc;
+    margin-left: 1rem;
+    padding-left: 1rem;
+    font-style: italic;
+}
+
+.ProseMirror pre {
+    background: #f4f4f4;
+    border-radius: 5px;
+    padding: 0.75rem 1rem;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.ProseMirror code {
+    background-color: rgba(97, 97, 97, 0.1);
+    border-radius: 0.25em;
+    padding: 0.25em 0.5em;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+}

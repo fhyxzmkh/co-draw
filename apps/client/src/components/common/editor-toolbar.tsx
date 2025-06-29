@@ -12,6 +12,7 @@ import {
   Palette,
   Highlighter,
   Underline,
+  Heading3,
 } from "lucide-react";
 import {
   Select,
@@ -21,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Toggle } from "@/components/ui/toggle";
+import { useEffect, useState } from "react";
 
 type Props = {
   editor: Editor;
@@ -29,6 +31,27 @@ type Props = {
 export const EditorToolbar = ({ editor }: Props) => {
   const fontFamilies = ["Inter", "Arial", "Georgia", "Courier New", "Verdana"];
   const fontSizes = ["12px", "14px", "16px", "18px", "24px", "30px", "36px"];
+
+  const currentFontSize = editor.getAttributes("textStyle").fontSize || "16px";
+
+  const [_, setForceUpdate] = useState(0);
+
+  useEffect(() => {
+    // 当编辑器的内容或选区更新时，Tiptap会触发这些事件
+    const handleUpdate = () => {
+      // 调用setState函数，这会告诉React需要重新渲染该组件
+      setForceUpdate((prev) => prev + 1);
+    };
+
+    editor.on("update", handleUpdate);
+    editor.on("selectionUpdate", handleUpdate);
+
+    // 组件卸载时，务必移除事件监听，防止内存泄漏
+    return () => {
+      editor.off("update", handleUpdate);
+      editor.off("selectionUpdate", handleUpdate);
+    };
+  }, [editor]);
 
   return (
     <div className="p-2 border-b border-gray-200 flex items-center flex-wrap gap-1">
@@ -53,14 +76,21 @@ export const EditorToolbar = ({ editor }: Props) => {
 
       {/* 字号选择 */}
       <Select
-        onValueChange={(value) =>
-          editor.chain().focus().setMark("textStyle", { fontSize: value }).run()
-        }
+        value={currentFontSize}
+        onValueChange={(value) => {
+          if (value === "default") {
+            editor.chain().focus().unsetFontSize().run();
+          } else {
+            editor.chain().focus().setFontSize(value).run();
+          }
+        }}
       >
         <SelectTrigger className="w-[80px]">
           <SelectValue placeholder="字号" />
         </SelectTrigger>
         <SelectContent>
+          {/* 添加一个“默认”选项 */}
+          <SelectItem value="default">默认</SelectItem>
           {fontSizes.map((size) => (
             <SelectItem key={size} value={size}>
               {size}
@@ -145,6 +175,15 @@ export const EditorToolbar = ({ editor }: Props) => {
         }
       >
         <Heading2 className="h-4 w-4" />
+      </Toggle>
+      <Toggle
+        size="sm"
+        pressed={editor.isActive("heading", { level: 3 })}
+        onPressedChange={() =>
+          editor.chain().focus().toggleHeading({ level: 3 }).run()
+        }
+      >
+        <Heading3 className="h-4 w-4" />
       </Toggle>
 
       {/* 列表 */}

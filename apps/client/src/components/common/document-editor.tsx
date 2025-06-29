@@ -16,6 +16,8 @@ import { useUserStore } from "@/stores/user-store";
 import { CollaborationCursor } from "@tiptap/extension-collaboration-cursor";
 import { useSocketStore } from "@/stores/socket-store";
 import { YSocketIOProvider } from "@/hooks/y-socketio-provider";
+import { Heading } from "@tiptap/extension-heading";
+import { FontSize } from "@/lib/font-size";
 
 interface DocumentEditorProps {
   documentId: string;
@@ -30,7 +32,6 @@ const DocumentEditor = ({ documentId, isEditable }: DocumentEditorProps) => {
 
   // 用一个 useEffect 来管理 editor 和 provider 的生命周期
   useEffect(() => {
-    // 确保所有依赖都已就绪
     if (!socket || !isConnected || !userInfo || !documentId) {
       return;
     }
@@ -54,6 +55,10 @@ const DocumentEditor = ({ documentId, isEditable }: DocumentEditorProps) => {
         Color,
         FontFamily,
         Underline,
+        FontSize,
+        Heading.configure({
+          levels: [1, 2, 3],
+        }),
         Highlight.configure({ multicolor: true }),
         Collaboration.configure({ document: ydoc }),
         CollaborationCursor.configure({
