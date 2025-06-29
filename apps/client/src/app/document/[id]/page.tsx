@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSocketStore } from "@/stores/socket-store";
 import { useUserStore } from "@/stores/user-store";
 import { axios_instance } from "@/config/configuration";
@@ -13,7 +13,11 @@ import CollaboratorsDialog, {
   Permission,
   PERMISSION_CONFIG,
 } from "@/components/common/collaborators-dialog";
-import { ArrowLeft, Users, Settings, Edit, View } from "lucide-react";
+import { ArrowLeft, Users, Settings, Edit, View, Download } from "lucide-react";
+import { DocumentEditorRef } from "@/components/common/document-editor";
+import { NodeHtmlMarkdown } from "node-html-markdown";
+
+const nhm = new NodeHtmlMarkdown();
 
 const DocumentEditor = dynamic(
   () => import("@/components/common/document-editor"),
@@ -31,6 +35,8 @@ export default function DocumentPage() {
   const params = useParams();
   const documentId = params.id as string;
 
+  const editorRef = useRef<DocumentEditorRef>(null);
+
   // --- State Management ---
   const [isCollaboratorsOpen, setIsCollaboratorsOpen] = useState(false);
   const [permissionRole, setPermissionRole] = useState<Permission | null>(null);
@@ -47,6 +53,38 @@ export default function DocumentPage() {
   }, [permissionRole]);
 
   // --- API & Side Effects ---
+
+  const downloadFile = (
+    content: string,
+    fileName: string,
+    mimeType: string,
+  ) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportHTML = () => {
+    const html = editorRef.current?.getHTML();
+    if (html) {
+      downloadFile(html, `document-${documentId}.html`, "text/html");
+    }
+  };
+
+  const handleExportMarkdown = () => {
+    const html = editorRef.current?.getHTML();
+    if (html) {
+      // 使用 nhm 实例的 translate 方法进行转换
+      const markdown = nhm.translate(html);
+      downloadFile(markdown, `document-${documentId}.md`, "text/markdown");
+    }
+  };
 
   // 获取文档信息和用户权限
   const getPermission = async () => {
@@ -115,6 +153,16 @@ export default function DocumentPage() {
               <Badge variant="secondary">正在加载权限...</Badge>
             )}
 
+            <Button variant="outline" size="sm" onClick={handleExportMarkdown}>
+              <Download className="h-4 w-4 mr-2" />
+              导出MD
+            </Button>
+
+            <Button variant="outline" size="sm" onClick={handleExportHTML}>
+              <Download className="h-4 w-4 mr-2" />
+              导出HTML
+            </Button>
+
             <Button
               variant="outline"
               size="sm"
@@ -133,7 +181,11 @@ export default function DocumentPage() {
       {/*编辑器区域*/}
       <main className="flex-1 flex justify-center p-2 sm:p-4 md:p-6">
         <div className="w-full max-w-4xl bg-white rounded-lg shadow-md p-6 sm:6">
-          <DocumentEditor documentId={documentId} isEditable={isEditable} />
+          <DocumentEditor
+            ref={editorRef}
+            documentId={documentId}
+            isEditable={isEditable}
+          />
         </div>
       </main>
 
