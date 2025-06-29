@@ -12,6 +12,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { BoardsService } from '../boards/boards.service';
+import { DocumentsService } from '../documents/documents.service';
 
 @WebSocketGateway(6788, {
   cors: {
@@ -25,7 +26,10 @@ export class SocketGateway
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly boardsService: BoardsService) {}
+  constructor(
+    private readonly boardsService: BoardsService,
+    private readonly documentsService: DocumentsService,
+  ) {}
 
   private readonly logger = new Logger(SocketGateway.name);
 
@@ -48,19 +52,19 @@ export class SocketGateway
   // 监听加入房间事件
   @SubscribeMessage('joinRoom')
   handleJoinRoom(
-    @MessageBody() data: { boardId: string },
+    @MessageBody() data: { resourceId: string },
     @ConnectedSocket() client: Socket,
   ): void {
-    const { boardId } = data;
-    this.logger.log(`Client ${client.id} joining room ${boardId}`);
+    const { resourceId } = data;
+    this.logger.log(`Client ${client.id} joining room ${resourceId}`);
 
-    client.join(boardId);
+    client.join(resourceId);
 
-    client.emit('joinedRoom', boardId); // 通知客户端已成功加入
+    client.emit('joinedRoom', resourceId); // 通知客户端已成功加入
   }
 
   // 监听初始化白板状态事件
-  @SubscribeMessage('getInitialState')
+  @SubscribeMessage('board:load')
   async handleGetInitialState(
     @MessageBody() data: { boardId: string },
     @ConnectedSocket() client: Socket,
@@ -113,5 +117,33 @@ export class SocketGateway
     const { boardId } = data;
 
     this.server.to(boardId).emit('canvas:cleared');
+  }
+
+  // 请求加载文档的初始状态
+  @SubscribeMessage('doc:load')
+  async handleDocLoad(
+    @MessageBody() data: { documentId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { documentId } = data;
+    const content = await this.documentsService.getDocumentContent(documentId);
+    if (content) {
+      client.emit('doc:state', { documentId, state: content });
+    }
+  }
+
+  // 转发文档的增量更新
+  @SubscribeMessage('doc:update')
+  handleDocUpdate(
+    @MessageBody() data: { documentId: string; update: Uint8Array },
+    @ConnectedSocket() client: Socket,
+  ) {
+    // 原封不动地将二进制更新广播给房间内其他客户端
+    client.to(data.documentId).emit('doc:update', {
+      documentId: data.documentId,
+      update: data.update,
+    });
+    // 异步持久化
+    this.documentsService.saveDocumentUpdate(data.documentId, data.update);
   }
 }

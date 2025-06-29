@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Users, Settings, Save } from "lucide-react";
 import WhiteboardCanvas, {
   WhiteboardRef,
-} from "@/components/whiteboard/whiteboard-canvas";
+} from "@/components/common/whiteboard-canvas";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { axios_instance } from "@/config/configuration";
@@ -62,7 +62,7 @@ export default function WhiteboardPage() {
   };
 
   useEffect(() => {
-    connect(id as string);
+    connect(id as string, "board");
 
     // 组件卸载时，调用 disconnect action 来清理连接
     return () => {

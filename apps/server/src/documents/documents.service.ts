@@ -8,6 +8,7 @@ import { ResourceTypeEnum } from '../permissions/entities/resource-type.enum';
 import { PermissionRoleEnum } from '../permissions/entities/permission-role.enum';
 import { CreatePermissionDto } from '../permissions/dto/create-permission.dto';
 import { PermissionsService } from '../permissions/permissions.service';
+import * as Y from 'yjs';
 
 @Injectable()
 export class DocumentsService {
@@ -80,5 +81,30 @@ export class DocumentsService {
         id: In(documentIds),
       },
     });
+  }
+
+  // 从数据库加载文档内容
+  async getDocumentContent(documentId: string): Promise<Uint8Array | null> {
+    const doc = await this.documentRepository.findOneBy({ id: documentId });
+    // content 在数据库中是 Buffer 类型，可以直接返回
+    return doc ? doc.content : null;
+  }
+
+  // 将文档更新合并并保存到数据库
+  async saveDocumentUpdate(documentId: string, update: Uint8Array) {
+    const doc = await this.documentRepository.findOneBy({ id: documentId });
+    const ydoc = new Y.Doc();
+
+    // 如果已有内容，先加载
+    if (doc && doc.content) {
+      Y.applyUpdate(ydoc, doc.content);
+    }
+
+    // 应用新的更新
+    Y.applyUpdate(ydoc, update);
+
+    // 将合并后的完整状态保存回数据库
+    const fullState = Y.encodeStateAsUpdate(ydoc);
+    await this.documentRepository.update(documentId, { content: fullState });
   }
 }

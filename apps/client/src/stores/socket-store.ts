@@ -1,5 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import { create } from "zustand/react";
+import { ResourceType } from "@/components/common/collaborators-dialog";
 
 interface SocketState {
   socket: Socket | null;
@@ -7,7 +8,7 @@ interface SocketState {
 }
 
 interface SocketActions {
-  connect: (boardId: string) => void;
+  connect: (resourceId: string, resourceType: ResourceType) => void;
   disconnect: () => void;
 }
 
@@ -21,7 +22,7 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
   // --- ACTIONS ---
 
   // 动作：连接到服务器
-  connect: (boardId: string) => {
+  connect: (resourceId: string, resourceType: ResourceType) => {
     // 防止重复连接
     if (get().socket) {
       return;
@@ -33,7 +34,13 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
       console.log("Zustand: Connected to WebSocket server!", newSocket.id);
       set({ socket: newSocket, isConnected: true });
 
-      newSocket.emit("joinRoom", { boardId });
+      newSocket.emit("joinRoom", { resourceId: resourceId });
+
+      if (resourceType === "board") {
+        newSocket.emit("board:load", { boardId: resourceId });
+      } else if (resourceType === "document") {
+        newSocket.emit("doc:load", { documentId: resourceId });
+      }
     });
 
     newSocket.on("disconnect", () => {
@@ -41,12 +48,9 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
       set({ socket: null, isConnected: false });
     });
 
-    // 监听确认加入房间的事件
     newSocket.on("joinedRoom", (roomId) => {
       console.log(`Successfully joined room: ${roomId}`);
     });
-
-    newSocket.emit("getInitialState", boardId);
   },
 
   // 动作：断开连接
