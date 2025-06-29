@@ -1,6 +1,6 @@
 import { create } from "zustand/react";
 
-interface UserInfo {
+export interface UserInfo {
   id: string;
   username: string;
 }

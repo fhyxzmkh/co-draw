@@ -146,4 +146,17 @@ export class SocketGateway
     // 异步持久化
     this.documentsService.saveDocumentUpdate(data.documentId, data.update);
   }
+
+  // 转发光标/在线状态更新
+  @SubscribeMessage('doc:awareness')
+  handleDocAwareness(
+    @MessageBody() data: { documentId: string; awarenessUpdate: any },
+    @ConnectedSocket() client: Socket,
+  ) {
+    // 原封不动地广播给房间内的其他人
+    client.to(data.documentId).emit('doc:awareness', {
+      documentId: data.documentId,
+      awarenessUpdate: data.awarenessUpdate,
+    });
+  }
 }

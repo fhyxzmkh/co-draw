@@ -130,9 +130,9 @@ export default function DocumentPage() {
         </div>
       </header>
 
-      {/* 编辑器区域 */}
-      <main className="flex-1 flex justify-center p-4 sm:p-6 md:p-8">
-        <div className="w-full max-w-4xl bg-white rounded-lg shadow-md p-8 sm:p-12">
+      {/*编辑器区域*/}
+      <main className="flex-1 flex justify-center p-2 sm:p-4 md:p-6">
+        <div className="w-full max-w-4xl bg-white rounded-lg shadow-md p-6 sm:6">
           <DocumentEditor documentId={documentId} isEditable={isEditable} />
         </div>
       </main>
