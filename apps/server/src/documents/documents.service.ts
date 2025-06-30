@@ -109,6 +109,12 @@ export class DocumentsService {
     await this.documentRepository.update(documentId, { content: fullState });
   }
 
+  // 全量保存文档状态
+  async saveFullDocument(documentId: string, fullState: Uint8Array) {
+    // 直接更新 content 字段，无需读取和合并，效率更高
+    await this.documentRepository.update(documentId, { content: fullState });
+  }
+
   async findMyRole(userId: string, documentId: string) {
     const p = await this.permissionsService.findOneBy(
       userId,

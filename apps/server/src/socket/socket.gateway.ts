@@ -10,12 +10,14 @@ import {
 } from '@nestjs/websockets';
 
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
+import { BadRequestException, Logger, UseGuards } from '@nestjs/common';
 import { BoardsService } from '../boards/boards.service';
 import { DocumentsService } from '../documents/documents.service';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import { WsAuthGuard } from '../auth/ws-auth.guard';
+import { ActiveDocsService } from '../documents/active-docs.service';
+import * as Y from 'yjs';
 
 @UseGuards(WsAuthGuard)
 @WebSocketGateway(6788, {
@@ -33,6 +35,7 @@ export class SocketGateway
   constructor(
     private readonly boardsService: BoardsService,
     private readonly documentsService: DocumentsService,
+    private readonly activeDocsService: ActiveDocsService,
     @InjectRedis() private readonly redis: Redis,
   ) {}
 
@@ -68,13 +71,26 @@ export class SocketGateway
       try {
         const presenceKey = `codraw:presence:${resourceId}`;
 
-        // 2. 从房间的在线列表中移除用户
-        await this.redis.srem(presenceKey, userId);
-        this.logger.log(
-          `User ${userId} removed from presence in room ${resourceId}`,
-        );
+        const onlineCount = await this.redis.scard(presenceKey); // scard 获取集合大小
 
-        // 3. 广播用户离开事件
+        if (onlineCount === 1) {
+          // 如果是最后一个离开的用户，触发保存
+          const ydoc = this.activeDocsService.get(resourceId);
+          if (ydoc) {
+            const finalState = Y.encodeStateAsUpdate(ydoc);
+            await this.documentsService.saveFullDocument(
+              resourceId,
+              finalState,
+            );
+            // 保存后销毁内存中的实例，释放内存
+            this.activeDocsService.destroy(resourceId);
+          }
+        }
+
+        // 从房间的在线列表中移除用户
+        await this.redis.srem(presenceKey, userId);
+
+        // 广播用户离开事件
         this.server.to(resourceId).emit('user:left', { resourceId, userId });
       } catch (error) {
         this.logger.error(
@@ -198,10 +214,24 @@ export class SocketGateway
     @ConnectedSocket() client: Socket,
   ) {
     const { documentId } = data;
-    const content = await this.documentsService.getDocumentContent(documentId);
-    if (content) {
-      client.emit('doc:state', { documentId, state: content });
+
+    let ydoc = this.activeDocsService.get(documentId);
+
+    if (!ydoc) {
+      // 如果内存中没有，从数据库加载并创建
+      const dbContent =
+        await this.documentsService.getDocumentContent(documentId);
+      if (!dbContent) {
+        this.logger.warn(`Document ${documentId} not found in DB.`);
+        throw new BadRequestException('Document not found');
+      }
+      ydoc = this.activeDocsService.create(documentId, dbContent);
+      this.logger.log(`Document ${documentId} loaded from DB into memory.`);
     }
+
+    // 将当前内存中的完整状态发给新加入的客户端
+    const fullState = Y.encodeStateAsUpdate(ydoc);
+    client.emit('doc:state', { documentId, state: fullState });
   }
 
   // 转发文档的增量更新
@@ -215,8 +245,11 @@ export class SocketGateway
       documentId: data.documentId,
       update: data.update,
     });
-    // 异步持久化
-    this.documentsService.saveDocumentUpdate(data.documentId, data.update);
+
+    const ydoc = this.activeDocsService.get(data.documentId);
+    if (ydoc) {
+      Y.applyUpdate(ydoc, data.update, client.id);
+    }
   }
 
   // 转发光标/在线状态更新
