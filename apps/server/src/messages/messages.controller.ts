@@ -1,7 +1,17 @@
-import { Body, Controller, Get, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { CreateInvitationDto } from './dto/create-message.dto';
+import { AuthGuard } from '../auth/auth.guard';
 
+@UseGuards(AuthGuard)
 @Controller('messages')
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}

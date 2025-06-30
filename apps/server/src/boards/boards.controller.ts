@@ -8,12 +8,15 @@ import {
   Delete,
   Query,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import { BoardsService } from './boards.service';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
 import { UpdatePermissionDto } from '../permissions/dto/update-permission.dto';
+import { AuthGuard } from '../auth/auth.guard';
 
+@UseGuards(AuthGuard)
 @Controller('boards')
 export class BoardsController {
   private readonly logger = new Logger('BoardsController');
