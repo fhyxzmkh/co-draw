@@ -49,6 +49,7 @@ import {
 } from "lucide-react";
 import { axios_instance } from "@/config/configuration";
 import { toast } from "sonner";
+import { useSocketStore } from "@/stores/socket-store";
 
 // --- 类型定义 ---
 
@@ -118,6 +119,15 @@ export default function CollaboratorsDialog({
     useState<Permission>("viewer");
   const [deletingCollaborator, setDeletingCollaborator] =
     useState<Collaborator | null>(null);
+
+  const onlineUserIds = useSocketStore((state) => state.onlineUserIds);
+  const socket = useSocketStore((state) => state.socket);
+
+  useEffect(() => {
+    if (open && socket) {
+      socket.emit("presence:get", resourceId);
+    }
+  }, [open, socket, resourceId]);
 
   // 检查当前用户是否有管理权限
   const canManage = useMemo(
@@ -323,6 +333,7 @@ export default function CollaboratorsDialog({
                   const isOwner = collaborator.role === "owner";
                   const PermissionIcon =
                     PERMISSION_CONFIG[collaborator.role].icon;
+                  const isOnline = onlineUserIds.includes(collaborator.id);
 
                   return (
                     <div
@@ -343,7 +354,19 @@ export default function CollaboratorsDialog({
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-sm">
+                            {collaborator.username.charAt(0).toUpperCase()}
+                          </div>
+                          <span
+                            className={`absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-white ${
+                              isOnline ? "bg-green-500" : "bg-gray-400"
+                            }`}
+                            title={isOnline ? "在线" : "离线"}
+                          />
+                        </div>
+
                         <Badge
                           variant="outline"
                           className={`${PERMISSION_CONFIG[collaborator.role].color}`}

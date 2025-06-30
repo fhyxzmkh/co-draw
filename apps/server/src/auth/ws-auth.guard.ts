@@ -28,7 +28,7 @@ export class WsAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const client: AuthSocket = context.switchToWs().getClient<AuthSocket>();
-    this.logger.log(`[Auth] Attempting to authenticate client: ${client.id}`);
+    // this.logger.log(`[Auth] Attempting to authenticate client: ${client.id}`);
 
     const token = this.extractTokenFromHandshake(client);
     if (!token) {
@@ -40,16 +40,15 @@ export class WsAuthGuard implements CanActivate {
     }
 
     try {
-      this.logger.log(`[Auth] Verifying token for client: ${client.id}`);
+      // this.logger.log(`[Auth] Verifying token for client: ${client.id}`);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const payload: any = await this.jwtService.verifyAsync(token, {
         secret: this.configService.get<string>('JWT_KEY'),
       });
 
-      this.logger.log(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        `[Auth] Token verified successfully for user: ${payload.sub || payload.username}`,
-      );
+      // this.logger.log(
+      //   `[Auth] Token verified successfully for user: ${payload.sub || payload.username}`,
+      // );
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       client.data.user = payload;
     } catch (error: any) {
@@ -58,13 +57,13 @@ export class WsAuthGuard implements CanActivate {
       return false;
     }
 
-    this.logger.log(`[Auth] Client ${client.id} authenticated successfully.`);
+    // this.logger.log(`[Auth] Client ${client.id} authenticated successfully.`);
     return true;
   }
 
   private extractTokenFromHandshake(client: Socket): string | undefined {
     const cookieString = client.handshake.headers.cookie;
-    this.logger.log(`[Auth] Raw cookie header: ${cookieString}`);
+    // this.logger.log(`[Auth] Raw cookie header: ${cookieString}`);
 
     if (!cookieString) {
       this.logger.warn('[Auth] No cookie string found in handshake headers.');
@@ -79,11 +78,11 @@ export class WsAuthGuard implements CanActivate {
       return undefined;
     }
 
-    this.logger.log(`[Auth] Found raw access_token: ${accessToken}`);
+    // this.logger.log(`[Auth] Found raw access_token: ${accessToken}`);
 
     try {
       const [type, token] = decodeURIComponent(accessToken).split(' ') ?? [];
-      this.logger.log(`[Auth] Token type: "${type}", Token exists: ${!!token}`);
+      // this.logger.log(`[Auth] Token type: "${type}", Token exists: ${!!token}`);
       return type === 'Bearer' ? token : undefined;
     } catch (e) {
       this.logger.error(
@@ -100,8 +99,8 @@ export class WsAuthGuard implements CanActivate {
     // WsException 是 WebSocket 版本的 HttpException
     client.emit('error', new WsException(message));
     client.disconnect(); // 主动断开连接
-    this.logger.log(
-      `[Auth] Disconnected client ${client.id} due to auth error.`,
-    );
+    // this.logger.log(
+    //   `[Auth] Disconnected client ${client.id} due to auth error.`,
+    // );
   }
 }

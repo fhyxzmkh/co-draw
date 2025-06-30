@@ -50,27 +50,94 @@ export class SocketGateway
   }
 
   // 处理客户端断开连接
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
+
+    const userId = client.data.user?.sub;
+    if (!userId) return;
+
+    // 1. 从 Redis 获取该用户加入的所有房间列表
+    const userRoomsKey = `user:rooms:${userId}`;
+    const joinedRooms = await this.redis.smembers(userRoomsKey);
+
+    this.logger.log(
+      `User ${userId} disconnecting from rooms: ${joinedRooms.join(', ')}`,
+    );
+
+    for (const resourceId of joinedRooms) {
+      try {
+        const presenceKey = `codraw:presence:${resourceId}`;
+
+        // 2. 从房间的在线列表中移除用户
+        await this.redis.srem(presenceKey, userId);
+        this.logger.log(
+          `User ${userId} removed from presence in room ${resourceId}`,
+        );
+
+        // 3. 广播用户离开事件
+        this.server.to(resourceId).emit('user:left', { resourceId, userId });
+      } catch (error) {
+        this.logger.error(
+          `Error during disconnect cleanup for user ${userId} in room ${resourceId}`,
+          error,
+        );
+      }
+    }
+
+    // 4. 清理该用户的房间列表记录
+    if (joinedRooms.length > 0) {
+      await this.redis.del(userRoomsKey);
+    }
   }
 
   // 监听加入房间事件
-  @SubscribeMessage('joinRoom')
-  handleJoinRoom(
+  @SubscribeMessage('subscribe')
+  async handleSubscribe(
     @MessageBody() data: { resourceId: string },
     @ConnectedSocket() client: Socket,
-  ): void {
+  ) {
     const { resourceId } = data;
-    this.logger.log(`Client ${client.id} joining room ${resourceId}`);
+    const user = client.data.user;
+
+    this.logger.log(
+      `User ${user.username} (ID: ${user.sub}) subscribing to resource ${resourceId}`,
+    );
 
     client.join(resourceId);
 
-    client.emit('joinedRoom', resourceId); // 通知客户端已成功加入
+    // 1. 更新房间的在线列表
+    const presenceKey = `codraw:presence:${resourceId}`;
+    await this.redis.sadd(presenceKey, user.sub);
+
+    // 2. 将当前房间ID添加到该用户的房间集合中
+    const userRoomsKey = `user:rooms:${user.sub}`;
+    await this.redis.sadd(userRoomsKey, resourceId);
+
+    // 广播新用户加入
+    this.server.to(resourceId).emit('user:joined', {
+      resourceId,
+      user: { id: user.sub, username: user.username },
+    });
+
+    client.emit('subscribed', { resourceId });
   }
 
+  // 处理获取在线列表的请求
+  @SubscribeMessage('presence:get')
+  async handleGetPresence(
+    @MessageBody() resourceId: string,
+    @ConnectedSocket() client: Socket,
+  ): Promise<void> {
+    const redisKey = `codraw:presence:${resourceId}`;
+    const onlineUserIds = await this.redis.smembers(redisKey);
+    // 只向请求者返回当前完整的在线列表
+    client.emit('presence:state', { resourceId, userIds: onlineUserIds });
+  }
+
+  // --- 具体业务 ---
   // 监听初始化白板状态事件
   @SubscribeMessage('board:load')
-  async handleGetInitialState(
+  async handleBoardLoad(
     @MessageBody() data: { boardId: string },
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
@@ -78,7 +145,7 @@ export class SocketGateway
 
     const result = await this.boardsService.findOne(boardId);
 
-    client.emit('initialState', result?.content);
+    client.emit('board:state', result?.content);
   }
 
   // 监听 "drawing" 事件

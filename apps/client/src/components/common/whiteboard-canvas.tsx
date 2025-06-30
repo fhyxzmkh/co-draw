@@ -209,8 +209,8 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
         canvas.renderAll();
       };
 
-      // 监听 'initialState' 事件
-      sk.on("initialState", (boardContent) => {
+      // 监听 'board:state' 事件
+      sk.on("board:state", (boardContent) => {
         if (boardContent && fabricCanvasRef.current) {
           fabricCanvasRef.current.loadFromJSON(boardContent, () => {
             if (isReadOnly) {
