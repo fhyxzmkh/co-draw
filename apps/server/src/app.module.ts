@@ -10,6 +10,7 @@ import { SocketModule } from './socket/socket.module';
 import { DocumentsModule } from './documents/documents.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { MessagesModule } from './messages/messages.module';
+import { RedisModule } from '@nestjs-modules/ioredis';
 
 @Module({
   imports: [
@@ -26,6 +27,15 @@ import { MessagesModule } from './messages/messages.module';
       database: process.env.DATABASE_SCHEME,
       autoLoadEntities: true,
       synchronize: false,
+    }),
+    RedisModule.forRoot({
+      options: {
+        host: process.env.REDIS_HOST,
+        port: 6379,
+        password: process.env.REDIS_PASSWORD,
+        db: 0,
+      },
+      type: 'single',
     }),
     UsersModule,
     AuthModule,

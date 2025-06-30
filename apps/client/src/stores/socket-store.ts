@@ -28,7 +28,9 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
       return;
     }
 
-    const newSocket = io("http://localhost:6788"); // NestJS 服务器地址
+    const newSocket = io("http://localhost:6788", {
+      withCredentials: true,
+    });
 
     newSocket.on("connect", () => {
       console.log("Zustand: Connected to WebSocket server!", newSocket.id);

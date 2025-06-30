@@ -10,10 +10,14 @@ import {
 } from '@nestjs/websockets';
 
 import { Server, Socket } from 'socket.io';
-import { Logger } from '@nestjs/common';
+import { Logger, UseGuards } from '@nestjs/common';
 import { BoardsService } from '../boards/boards.service';
 import { DocumentsService } from '../documents/documents.service';
+import { InjectRedis } from '@nestjs-modules/ioredis';
+import Redis from 'ioredis';
+import { WsAuthGuard } from '../auth/ws-auth.guard';
 
+@UseGuards(WsAuthGuard)
 @WebSocketGateway(6788, {
   cors: {
     origin: 'http://localhost:3000',
@@ -29,6 +33,7 @@ export class SocketGateway
   constructor(
     private readonly boardsService: BoardsService,
     private readonly documentsService: DocumentsService,
+    @InjectRedis() private readonly redis: Redis,
   ) {}
 
   private readonly logger = new Logger(SocketGateway.name);
