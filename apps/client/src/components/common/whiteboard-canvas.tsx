@@ -353,7 +353,8 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
       if (!fabricCanvasRef.current || isReadOnly) return;
 
       const rect = new fabric.Rect({
-        // @ts-ignore
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         id: nanoid().toString(),
         left: 100,
         top: 100,
@@ -378,7 +379,8 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
       if (!fabricCanvasRef.current || isReadOnly) return;
 
       const circle = new fabric.Circle({
-        // @ts-ignore
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         id: nanoid().toString(),
         left: 100,
         top: 100,
@@ -402,7 +404,8 @@ const WhiteboardCanvas = forwardRef<WhiteboardRef, WhiteboardCanvasProps>(
       if (!fabricCanvasRef.current || isReadOnly) return;
 
       const text = new fabric.IText("双击编辑文本", {
-        // @ts-ignore
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         id: nanoid().toString(),
         left: 100,
         top: 100,

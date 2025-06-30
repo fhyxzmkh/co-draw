@@ -54,13 +54,6 @@ export default function WhiteboardPage() {
   //   console.log("分享白板");
   // };
 
-  const getPermission = async () => {
-    const response = await axios_instance.get(
-      `/boards/role?userId=${userInfo?.id}&boardId=${id}`,
-    );
-    setPermissionRole(response.data);
-  };
-
   useEffect(() => {
     connect(id as string, "board");
 
@@ -71,6 +64,13 @@ export default function WhiteboardPage() {
   }, [connect, disconnect, id]);
 
   useEffect(() => {
+    const getPermission = async () => {
+      const response = await axios_instance.get(
+        `/boards/role?userId=${userInfo?.id}&boardId=${id}`,
+      );
+      setPermissionRole(response.data);
+    };
+
     getPermission();
   }, [id, userInfo]);
 

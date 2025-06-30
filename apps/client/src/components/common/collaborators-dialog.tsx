@@ -135,29 +135,29 @@ export default function CollaboratorsDialog({
     [currentUserPermission],
   );
 
-  // 拉取协作者列表
-  const getCollaborators = async () => {
-    if (resourceType === "board") {
-      const response = await axios_instance.get(
-        `/boards/participants?boardId=${resourceId}`,
-      );
-
-      setCollaborators(response.data);
-    }
-    if (resourceType === "document") {
-      const response = await axios_instance.get(
-        `/documents/participants?documentId=${resourceId}`,
-      );
-
-      setCollaborators(response.data);
-    }
-  };
-
   useEffect(() => {
+    // 拉取协作者列表
+    const getCollaborators = async () => {
+      if (resourceType === "board") {
+        const response = await axios_instance.get(
+          `/boards/participants?boardId=${resourceId}`,
+        );
+
+        setCollaborators(response.data);
+      }
+      if (resourceType === "document") {
+        const response = await axios_instance.get(
+          `/documents/participants?documentId=${resourceId}`,
+        );
+
+        setCollaborators(response.data);
+      }
+    };
+
     if (open) {
       getCollaborators();
     }
-  }, [open, resourceId]);
+  }, [open, resourceId, resourceType]);
 
   // 发送邀请
   const sendInvite = async () => {

@@ -86,14 +86,6 @@ export default function DocumentPage() {
     }
   };
 
-  // 获取文档信息和用户权限
-  const getPermission = async () => {
-    const response = await axios_instance.get(
-      `/documents/role?userId=${userInfo?.id}&documentId=${documentId}`,
-    );
-    setPermissionRole(response.data);
-  };
-
   // 管理 WebSocket 连接
   useEffect(() => {
     if (documentId) {
@@ -106,6 +98,14 @@ export default function DocumentPage() {
 
   // 当用户信息或文档ID变化时，重新获取权限
   useEffect(() => {
+    // 获取文档信息和用户权限
+    const getPermission = async () => {
+      const response = await axios_instance.get(
+        `/documents/role?userId=${userInfo?.id}&documentId=${documentId}`,
+      );
+      setPermissionRole(response.data);
+    };
+
     getPermission();
   }, [documentId, userInfo]);
 
