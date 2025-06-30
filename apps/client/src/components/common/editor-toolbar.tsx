@@ -42,7 +42,7 @@ export const EditorToolbar = ({ editor }: Props) => {
 
   const currentFontSize = editor.getAttributes("textStyle").fontSize || "16px";
 
-  const [_, setForceUpdate] = useState(0);
+  const [, setForceUpdate] = useState(0);
 
   useEffect(() => {
     // 当编辑器的内容或选区更新时，Tiptap会触发这些事件
@@ -54,7 +54,7 @@ export const EditorToolbar = ({ editor }: Props) => {
     editor.on("update", handleUpdate);
     editor.on("selectionUpdate", handleUpdate);
 
-    // 组件卸载时，务必移除事件监听，防止内存泄漏
+    // 组件卸载时，移除事件监听，防止内存泄漏
     return () => {
       editor.off("update", handleUpdate);
       editor.off("selectionUpdate", handleUpdate);
