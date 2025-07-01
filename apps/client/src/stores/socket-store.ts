@@ -35,7 +35,7 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
       return;
     }
 
-    const newSocket = io("http://localhost:6788", {
+    const newSocket = io("https://sunyongan.top:6788", {
       withCredentials: true,
     });
 

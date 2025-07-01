@@ -22,7 +22,7 @@ import * as Y from 'yjs';
 @UseGuards(WsAuthGuard)
 @WebSocketGateway(6788, {
   cors: {
-    origin: 'http://localhost:3000',
+    origin: ['http://localhost:3000', 'https://co-draw-alpha.vercel.app'],
     credentials: true,
   },
 })
