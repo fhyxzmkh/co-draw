@@ -49,10 +49,7 @@ export default function WhiteboardPage() {
     }
   };
 
-  // const handleShare = () => {
-  //   // 这里可以实现分享白板的逻辑
-  //   console.log("分享白板");
-  // };
+  useEffect(() => {}, []);
 
   useEffect(() => {
     connect(id as string, "board");

@@ -31,6 +31,8 @@ export class DocumentsController {
   // 返回所有我创建或者我参与的文档
   @Get('/my')
   findMyAll(@Query('userId') userId: string) {
+    this.logger.log('debug');
+    this.logger.log(userId);
     return this.documentsService.findMyAll(userId);
   }
 
@@ -53,10 +55,6 @@ export class DocumentsController {
     @Query('userId') userId: string,
     @Query('documentId') documentId: string,
   ) {
-    this.logger.log('debug');
-    this.logger.log(userId);
-    this.logger.log(documentId);
-
     return this.documentsService.findMyRole(userId, documentId);
   }
 

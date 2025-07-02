@@ -45,7 +45,10 @@ export class MessagesService {
   }
 
   async findInvitationList(userId: string) {
-    return await this.messageRepository.findBy({ toUserId: userId });
+    return await this.messageRepository.find({
+      where: { toUserId: userId },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async updateInvitation(invitationId: string, opt: number) {
