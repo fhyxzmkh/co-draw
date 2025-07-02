@@ -43,7 +43,7 @@ export class AuthController {
         path: '/',
         secure: false, // 生产环境建议设置为 true，只通过 HTTPS 发送
         maxAge: 3600000, // Cookie 有效期，例如 1 小时 (单位毫秒)
-        // sameSite: 'lax', // 防止 CSRF 攻击，根据需求设置
+        // sameSite: 'none', // 防止 CSRF 攻击，根据需求设置
       });
       return { message: 'success' };
     }
