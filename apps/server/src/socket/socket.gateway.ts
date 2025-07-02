@@ -20,7 +20,7 @@ import { ActiveDocsService } from '../documents/active-docs.service';
 import * as Y from 'yjs';
 
 @UseGuards(WsAuthGuard)
-@WebSocketGateway(10011, {
+@WebSocketGateway(81, {
   cors: {
     origin: ['http://localhost:3000', 'https://co-draw-alpha.vercel.app'],
     credentials: true,
