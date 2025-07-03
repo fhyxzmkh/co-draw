@@ -35,7 +35,7 @@ export const useSocketStore = create<SocketStore>((set, get) => ({
       return;
     }
 
-    const newSocket = io("https://co-draw-server.vercel.app:81", {
+    const newSocket = io("http://localhost:9961", {
       withCredentials: true,
     });
 

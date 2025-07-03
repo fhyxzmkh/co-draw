@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "https://co-draw-server.vercel.app";
+const BASE_URL = "http://localhost:9960";
 
 export const axios_instance = axios.create({
   baseURL: BASE_URL,
